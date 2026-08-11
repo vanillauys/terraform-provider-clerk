@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -61,5 +62,55 @@ func TestNewClientWiring(t *testing.T) {
 	_, err = c.JWTTemplates.Get(context.Background(), "jtmp_missing")
 	if !IsNotFound(err) {
 		t.Errorf("IsNotFound(%v) = false, want true", err)
+	}
+}
+
+// TestRawInstanceCalls checks the raw calls that cover SDK gaps:
+// GET /instance and the allowed_origins PATCH.
+func TestRawInstanceCalls(t *testing.T) {
+	var patchBody string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/instance" {
+			t.Errorf("path = %q, want /instance", r.URL.Path)
+		}
+		switch r.Method {
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprint(w, `{"object":"instance","id":"ins_123","environment_type":"development","allowed_origins":["https://a.example.com"]}`)
+		case http.MethodPatch:
+			b, _ := io.ReadAll(r.Body)
+			patchBody = string(b)
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			t.Errorf("method = %q", r.Method)
+		}
+	}))
+	defer ts.Close()
+
+	c := New("sk_test_wiring", ts.URL, "test")
+
+	instance, err := c.GetInstance(context.Background())
+	if err != nil {
+		t.Fatalf("GetInstance error: %v", err)
+	}
+	if instance.ID != "ins_123" || instance.EnvironmentType != "development" || len(instance.AllowedOrigins) != 1 {
+		t.Errorf("instance = %+v", instance)
+	}
+
+	if err := c.UpdateAllowedOrigins(context.Background(), []string{"https://b.example.com"}); err != nil {
+		t.Fatalf("UpdateAllowedOrigins error: %v", err)
+	}
+	want := `{"allowed_origins":["https://b.example.com"]}`
+	if patchBody != want {
+		t.Errorf("PATCH body = %s, want %s", patchBody, want)
+	}
+
+	// An empty list must reach the API (it clears the origins).
+	if err := c.UpdateAllowedOrigins(context.Background(), nil); err != nil {
+		t.Fatalf("UpdateAllowedOrigins(nil) error: %v", err)
+	}
+	want = `{"allowed_origins":[]}`
+	if patchBody != want {
+		t.Errorf("PATCH body = %s, want %s", patchBody, want)
 	}
 }

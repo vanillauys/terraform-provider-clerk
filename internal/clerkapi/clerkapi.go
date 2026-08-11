@@ -3,6 +3,7 @@
 package clerkapi
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
 	"github.com/clerk/clerk-sdk-go/v2/blocklistidentifier"
 	"github.com/clerk/clerk-sdk-go/v2/domain"
+	"github.com/clerk/clerk-sdk-go/v2/instancesettings"
 	"github.com/clerk/clerk-sdk-go/v2/jwttemplate"
 	"github.com/clerk/clerk-sdk-go/v2/redirecturl"
 )
@@ -19,11 +21,16 @@ import (
 // the dev instance and the prod instance at the same time. The global
 // clerk.SetKey is deliberately not used for that reason.
 type Client struct {
-	JWTTemplates *jwttemplate.Client
-	RedirectURLs *redirecturl.Client
-	Allowlist    *allowlistidentifier.Client
-	Blocklist    *blocklistidentifier.Client
-	Domains      *domain.Client
+	JWTTemplates     *jwttemplate.Client
+	RedirectURLs     *redirecturl.Client
+	Allowlist        *allowlistidentifier.Client
+	Blocklist        *blocklistidentifier.Client
+	Domains          *domain.Client
+	InstanceSettings *instancesettings.Client
+
+	// backend serves the raw calls below for the endpoints that the SDK
+	// does not wrap yet.
+	backend clerk.Backend
 }
 
 // New builds a Client for one Clerk instance. An empty apiURL keeps the
@@ -38,12 +45,49 @@ func New(secretKey, apiURL, version string) *Client {
 		Application: "terraform-provider-clerk/" + version,
 	}
 	return &Client{
-		JWTTemplates: jwttemplate.NewClient(cfg),
-		RedirectURLs: redirecturl.NewClient(cfg),
-		Allowlist:    allowlistidentifier.NewClient(cfg),
-		Blocklist:    blocklistidentifier.NewClient(cfg),
-		Domains:      domain.NewClient(cfg),
+		JWTTemplates:     jwttemplate.NewClient(cfg),
+		RedirectURLs:     redirecturl.NewClient(cfg),
+		Allowlist:        allowlistidentifier.NewClient(cfg),
+		Blocklist:        blocklistidentifier.NewClient(cfg),
+		Domains:          domain.NewClient(cfg),
+		InstanceSettings: instancesettings.NewClient(cfg),
+		backend:          clerk.NewBackend(&cfg.BackendConfig),
 	}
+}
+
+// Instance is the response of GET /instance. The SDK (v2.7.0) does not
+// wrap this endpoint; remove this raw call when it does.
+type Instance struct {
+	clerk.APIResource
+	ID              string   `json:"id"`
+	EnvironmentType string   `json:"environment_type"`
+	AllowedOrigins  []string `json:"allowed_origins"`
+}
+
+// GetInstance calls GET /instance.
+func (c *Client) GetInstance(ctx context.Context) (*Instance, error) {
+	req := clerk.NewAPIRequest(http.MethodGet, "/instance")
+	instance := &Instance{}
+	err := c.backend.Call(ctx, req, instance)
+	return instance, err
+}
+
+type updateAllowedOriginsParams struct {
+	clerk.APIParams
+	// No omitempty: an empty list must reach the API to clear the origins.
+	AllowedOrigins []string `json:"allowed_origins"`
+}
+
+// UpdateAllowedOrigins calls PATCH /instance with only allowed_origins.
+// The SDK's instancesettings.UpdateParams does not carry this field yet.
+func (c *Client) UpdateAllowedOrigins(ctx context.Context, origins []string) error {
+	if origins == nil {
+		// Send [] rather than null: the empty array clears the origins.
+		origins = []string{}
+	}
+	req := clerk.NewAPIRequest(http.MethodPatch, "/instance")
+	req.SetParams(&updateAllowedOriginsParams{AllowedOrigins: origins})
+	return c.backend.Call(ctx, req, &clerk.APIResource{})
 }
 
 // IsNotFound reports whether err is a Clerk API response with HTTP status

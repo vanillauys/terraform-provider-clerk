@@ -1,0 +1,27 @@
+name: nightly
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  # The acceptance suite runs against a real Clerk development instance and
+  # mutates its configuration. The CLERK_SECRET_KEY_ACC secret holds the key
+  # of a dedicated throwaway instance. Without the secret the job skips
+  # cleanly, so forks stay green.
+  testacc:
+    runs-on: ubuntu-latest
+    env:
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_ACC }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+      - run: |
+          if [ -z "$CLERK_SECRET_KEY" ]; then
+            echo "CLERK_SECRET_KEY_ACC is not set; skip the suite."
+            exit 0
+          fi
+          make testacc

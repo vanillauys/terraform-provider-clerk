@@ -12,8 +12,10 @@ test:
 
 # Acceptance tests run against a real Clerk instance and mutate its
 # configuration. Point CLERK_SECRET_KEY at a development instance.
+# -p 1 is load-bearing: the instance singletons (settings, restrictions,
+# organization settings) share one instance, and parallel packages race.
 testacc:
-	TF_ACC=1 go test ./internal/... -run 'TestAcc' -v -timeout 30m
+	TF_ACC=1 go test ./internal/... -run 'TestAcc' -v -timeout 30m -p 1
 
 lint:
 	golangci-lint run

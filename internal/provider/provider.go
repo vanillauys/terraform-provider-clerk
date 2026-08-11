@@ -14,6 +14,9 @@ import (
 	"github.com/vanillauys/terraform-provider-clerk/internal/clerkapi"
 	dsdomains "github.com/vanillauys/terraform-provider-clerk/internal/datasources/domains"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/identifier"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instanceorgsettings"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancerestrictions"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancesettings"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/jwttemplate"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/redirecturl"
 )
@@ -113,6 +116,9 @@ func (p *ClerkProvider) Resources(_ context.Context) []func() resource.Resource 
 		redirecturl.NewResource,
 		identifier.NewAllowlistResource,
 		identifier.NewBlocklistResource,
+		instancesettings.NewResource,
+		instancerestrictions.NewResource,
+		instanceorgsettings.NewResource,
 	}
 }
 
