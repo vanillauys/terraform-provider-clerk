@@ -1,0 +1,20 @@
+# gitleaks configuration for terraform-provider-clerk
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+#
+# The .githooks/pre-commit hook uses this file to scan staged changes.
+
+title = "terraform-provider-clerk"
+
+[extend]
+# Start from the full set of built-in gitleaks rules, then layer our allowlist on top.
+useDefault = true
+
+[allowlist]
+description = "Local agent config and generated artefacts"
+# Paths are regexes matched against the repo-relative file path.
+paths = [
+  # Local-only agent skills/notes (kept out of git via .git/info/exclude, never pushed)
+  '''(^|/)\.claude/''',
+  # GoReleaser build output
+  '''(^|/)dist/''',
+]

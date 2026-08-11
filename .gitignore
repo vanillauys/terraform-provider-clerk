@@ -1,0 +1,6 @@
+/terraform-provider-clerk
+/dist/
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
