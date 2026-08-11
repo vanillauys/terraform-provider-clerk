@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-11
+
 - Add the `clerk_instance_settings` singleton resource. It manages the
   general instance settings and `allowed_origins` (readable, with drift
   detection); the other fields are write-only.
