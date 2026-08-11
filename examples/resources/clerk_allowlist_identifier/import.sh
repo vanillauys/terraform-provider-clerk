@@ -1,0 +1,1 @@
+terraform import clerk_allowlist_identifier.founder alid_2abcDEFghiJKLmnoPQRstuVWXyz

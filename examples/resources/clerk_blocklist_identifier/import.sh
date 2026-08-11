@@ -1,0 +1,1 @@
+terraform import clerk_blocklist_identifier.spam_domain blid_2abcDEFghiJKLmnoPQRstuVWXyz

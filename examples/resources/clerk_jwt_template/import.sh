@@ -1,0 +1,1 @@
+terraform import clerk_jwt_template.api jtmp_2abcDEFghiJKLmnoPQRstuVWXyz

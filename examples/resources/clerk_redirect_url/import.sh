@@ -1,0 +1,1 @@
+terraform import clerk_redirect_url.app_callback ru_2abcDEFghiJKLmnoPQRstuVWXyz
