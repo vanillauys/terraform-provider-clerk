@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+## [0.1.0] - 2026-08-11
 
 - Add the `clerk` provider with `secret_key` and `api_url` configuration and
   support for aliased providers (one instance per provider block).
