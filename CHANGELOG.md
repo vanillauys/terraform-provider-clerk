@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-11
+
+- Add the `clerk_oauth_application` resource. `client_secret` comes from
+  the create response and stays in state; `scopes` is write-only because
+  Clerk canonicalizes the value server-side (order, plus a forced
+  `offline_access`).
+- Add the `clerk_saml_connection` resource. The identity-provider key is
+  `provider_key` (`provider` is a reserved attribute name in Terraform).
+
 ## [0.5.0] - 2026-08-11
 
 - Add the `clerk_organization` resource with metadata support.

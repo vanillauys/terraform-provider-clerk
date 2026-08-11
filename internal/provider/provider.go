@@ -18,18 +18,20 @@ import (
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/apikey"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/domainres"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/identifier"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instanceorgsettings"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancerestrictions"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancesettings"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/jwttemplate"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/machine"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/oauthapp"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/organization"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgdomain"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgmembership"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgpermission"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgrole"
-	"github.com/vanillauys/terraform-provider-clerk/internal/resources/webhook"
-	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instanceorgsettings"
-	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancerestrictions"
-	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancesettings"
-	"github.com/vanillauys/terraform-provider-clerk/internal/resources/jwttemplate"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/redirecturl"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/samlconn"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/webhook"
 )
 
 var _ provider.Provider = (*ClerkProvider)(nil)
@@ -139,6 +141,8 @@ func (p *ClerkProvider) Resources(_ context.Context) []func() resource.Resource 
 		orgrole.NewResource,
 		orgdomain.NewResource,
 		orgmembership.NewResource,
+		oauthapp.NewResource,
+		samlconn.NewResource,
 	}
 }
 

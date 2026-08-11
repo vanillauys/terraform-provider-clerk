@@ -1,0 +1,1 @@
+terraform import clerk_saml_connection.okta samlc_2abcDEFghiJKLmnoPQRstuVWXyz
