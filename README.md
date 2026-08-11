@@ -4,22 +4,27 @@ A Terraform provider for [Clerk](https://clerk.com). It manages the
 configuration of a Clerk instance through the
 [Clerk Backend API](https://clerk.com/docs/reference/backend-api).
 
-**Status: MVP.** The provider is not yet on the Terraform Registry. Build it
-locally and use a dev override (see below). Breaking changes can land in
-minor releases until v1.0.0.
+**Status: pre-1.0.** All waves through SSO are on the
+[Terraform Registry](https://registry.terraform.io/providers/vanillauys/clerk).
+Breaking changes can land in minor releases until v1.0.0; the CHANGELOG
+flags them.
 
 ## What it manages
 
-| Type | Name | Operations |
-|------|------|------------|
-| Resource | `clerk_jwt_template` | create, read, update, delete, import |
-| Resource | `clerk_redirect_url` | create, read, delete (replace on change), import |
-| Resource | `clerk_allowlist_identifier` | create, read, delete (replace on change), import |
-| Resource | `clerk_blocklist_identifier` | create, read, delete (replace on change), import |
-| Data source | `clerk_domains` | read, with the CNAME records for DNS |
+| Area | Resources |
+|------|-----------|
+| Authentication config | `clerk_jwt_template`, `clerk_redirect_url`, `clerk_allowlist_identifier`, `clerk_blocklist_identifier` |
+| Instance singletons | `clerk_instance_settings`, `clerk_instance_restrictions`, `clerk_instance_organization_settings` |
+| Machine-to-machine | `clerk_api_key`, `clerk_machine` |
+| Domains and webhooks | `clerk_domain`, `clerk_webhook` |
+| Organizations | `clerk_organization`, `clerk_organization_permission`, `clerk_organization_role`, `clerk_organization_domain`, `clerk_organization_membership` |
+| SSO | `clerk_oauth_application`, `clerk_saml_connection` |
+| Data sources | `clerk_domains`, `clerk_jwks`, `clerk_organization` |
 
 One provider block targets one Clerk instance. Use a provider alias for a
-second instance (for example dev and prod).
+second instance (for example dev and prod). The
+[guides](https://registry.terraform.io/providers/vanillauys/clerk/latest/docs/guides/getting-started)
+cover setup, aliases, adoption with import, and secrets.
 
 ## Example
 
@@ -103,16 +108,16 @@ fails when the generated docs drift from the schema.
 The provider grows in waves. Each wave ships as one tagged version with
 acceptance tests, import support, and generated docs.
 
-| Version | Wave | Scope |
-|---------|------|-------|
-| v0.1.0 | Publish gate | Registry namespace, GPG release signing, first tag. No new resources. |
-| v0.2.0 | Instance plane | `clerk_instance_settings`, `clerk_instance_restrictions`, `clerk_instance_organization_settings`. Write-only API; documented drift caveat. |
-| v0.3.0 | API keys | `clerk_api_key`, `clerk_machine`, machine scopes. |
-| v0.4.0 | Domains and webhooks | `clerk_domain`, `clerk_webhook` (Svix), `clerk_jwks` data source. |
-| v0.5.0 | Organizations | `clerk_organization` plus roles, permissions, domains, memberships, and lookup data sources. |
-| v0.6.0 | SSO | `clerk_oauth_application`, `clerk_saml_connection`. |
-| v0.7.0 | Docs | Guides: getting started, dev and prod instances, adoption with import, secrets. |
-| v1.0.0 | Stable | After a dogfood gate: real stacks run on the registry build with an empty plan, and the nightly acceptance suite is green for 14 days. |
+| Version | Wave | Status |
+|---------|------|--------|
+| v0.1.0 | Publish gate | Done |
+| v0.2.0 | Instance plane | Done |
+| v0.3.0 | API keys and machines | Done |
+| v0.4.0 | Domains, webhooks, JWKS | Done |
+| v0.5.0 | Organizations | Done |
+| v0.6.0 | SSO | Done |
+| v0.7.0 | Docs: the four guides | Done |
+| v1.0.0 | Stable | After the dogfood gate: real stacks run on the registry build with an empty plan, and the nightly acceptance suite is green for 14 days. |
 
 The runtime plane stays out of scope: users, sessions, tokens,
 invitations, and the deprecated email/SMS template API. User lifecycle

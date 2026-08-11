@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-11
+
+- Add the four guides: getting started, dev and prod instances, adoption
+  of an existing instance with import, and secrets.
+- Rework the index page and the README around the full resource surface.
+
 ## [0.6.0] - 2026-08-11
 
 - Add the `clerk_oauth_application` resource. `client_secret` comes from

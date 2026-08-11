@@ -1,7 +1,7 @@
 ---
 page_title: "Clerk Provider"
 description: |-
-  Manage the configuration of a Clerk instance: JWT templates, redirect URLs, sign-up allowlist and blocklist entries, and domain DNS data.
+  Manage the configuration of a Clerk instance: JWT templates, redirect URLs, sign-up restrictions, API keys, machines, domains, webhooks, organizations, and SSO.
 ---
 
 # Clerk Provider
@@ -9,10 +9,14 @@ description: |-
 Manage the configuration of a [Clerk](https://clerk.com) instance through the
 [Clerk Backend API](https://clerk.com/docs/reference/backend-api):
 
-- **JWT templates** with custom claims and lifetimes
-- **Redirect URLs** for OAuth and SSO flows
-- **Sign-up restrictions**: allowlist and blocklist identifiers
-- **Domains** as a data source, with the CNAME records a production instance needs in DNS
+- **Authentication config**: JWT templates, redirect URLs, sign-up
+  allowlist and blocklist, instance settings and restrictions
+- **Machine-to-machine**: API keys and machines
+- **Domains**: satellite domains, plus the CNAME records for DNS as data
+- **Webhooks**: the Svix integration
+- **Organizations**: organizations, custom roles and permissions, verified
+  domains, memberships
+- **SSO**: OAuth applications and SAML connections
 
 One provider block targets one Clerk instance. Use a provider alias for a
 second instance, for example dev and prod.
@@ -23,6 +27,29 @@ The provider authenticates with the instance secret key (`sk_test_...` or
 
 This provider is pre-1.0: breaking changes can land in minor releases until
 v1.0.0. Pin an exact version if you need stability.
+
+## Guides
+
+- [Getting started](guides/getting-started) — configure the provider and
+  apply a first JWT template, redirect URL, and restriction.
+- [Dev and prod instances](guides/dev-and-prod-instances) — one plan, two
+  instances, provider aliases, and the DNS records.
+- [Adopting an existing instance](guides/adopting-an-existing-instance) —
+  bring a configured instance under Terraform with import.
+- [Secrets and sensitive values](guides/secrets) — what lands in state and
+  how to treat it.
+
+## Before you start
+
+1. **Singletons adopt, they never delete.** The instance-level resources
+   (settings, restrictions, organization settings, webhook) adopt the
+   instance on create; destroy only removes them from state.
+2. **Some fields are write-only.** Clerk does not return them, so the
+   provider cannot see dashboard drift on them. Each resource doc names
+   its write-only fields.
+3. **The state file holds secrets** (API-key secrets, machine keys, OAuth
+   client secrets). Treat the state as a secret; see the
+   [secrets guide](guides/secrets).
 
 ## Example Usage
 
