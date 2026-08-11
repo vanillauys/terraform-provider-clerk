@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-11
+
+- Add the `clerk_api_key` resource. The secret stays in state (sensitive)
+  and Read keeps it fresh through the secret endpoint; a revoked or
+  expired key leaves state so the next apply replaces it.
+- Add the `clerk_machine` resource with `scoped_machines` reconcile
+  through the machine-scopes API.
+- BREAKING: `clerk_instance_settings.allowed_origins` is now a set. As a
+  list it produced phantom refresh diffs because Clerk returns the origins
+  in arbitrary order.
+- Make `make testacc` bypass the Go test cache (`-count=1`): a cached pass
+  reported green without any API call.
+
 ## [0.2.0] - 2026-08-11
 
 - Add the `clerk_instance_settings` singleton resource. It manages the

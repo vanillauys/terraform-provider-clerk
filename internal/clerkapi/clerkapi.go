@@ -9,10 +9,13 @@ import (
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/allowlistidentifier"
+	"github.com/clerk/clerk-sdk-go/v2/apikey"
 	"github.com/clerk/clerk-sdk-go/v2/blocklistidentifier"
 	"github.com/clerk/clerk-sdk-go/v2/domain"
 	"github.com/clerk/clerk-sdk-go/v2/instancesettings"
 	"github.com/clerk/clerk-sdk-go/v2/jwttemplate"
+	"github.com/clerk/clerk-sdk-go/v2/machine"
+	"github.com/clerk/clerk-sdk-go/v2/machinescope"
 	"github.com/clerk/clerk-sdk-go/v2/redirecturl"
 )
 
@@ -27,6 +30,9 @@ type Client struct {
 	Blocklist        *blocklistidentifier.Client
 	Domains          *domain.Client
 	InstanceSettings *instancesettings.Client
+	APIKeys          *apikey.Client
+	Machines         *machine.Client
+	MachineScopes    *machinescope.Client
 
 	// backend serves the raw calls below for the endpoints that the SDK
 	// does not wrap yet.
@@ -51,6 +57,9 @@ func New(secretKey, apiURL, version string) *Client {
 		Blocklist:        blocklistidentifier.NewClient(cfg),
 		Domains:          domain.NewClient(cfg),
 		InstanceSettings: instancesettings.NewClient(cfg),
+		APIKeys:          apikey.NewClient(cfg),
+		Machines:         machine.NewClient(cfg),
+		MachineScopes:    machinescope.NewClient(cfg),
 		backend:          clerk.NewBackend(&cfg.BackendConfig),
 	}
 }

@@ -14,8 +14,10 @@ test:
 # configuration. Point CLERK_SECRET_KEY at a development instance.
 # -p 1 is load-bearing: the instance singletons (settings, restrictions,
 # organization settings) share one instance, and parallel packages race.
+# -count=1 is load-bearing too: without it go test reuses cached passes and
+# the suite reports green without touching the API.
 testacc:
-	TF_ACC=1 go test ./internal/... -run 'TestAcc' -v -timeout 30m -p 1
+	TF_ACC=1 go test ./internal/... -run 'TestAcc' -v -timeout 30m -p 1 -count=1
 
 lint:
 	golangci-lint run

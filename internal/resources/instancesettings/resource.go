@@ -9,6 +9,7 @@ package instancesettings
 
 import (
 	"context"
+	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	sdkinstancesettings "github.com/clerk/clerk-sdk-go/v2/instancesettings"
@@ -44,7 +45,7 @@ type resourceModel struct {
 	SupportEmail                types.String `tfsdk:"support_email"`
 	ClerkJSVersion              types.String `tfsdk:"clerk_js_version"`
 	DevelopmentOrigin           types.String `tfsdk:"development_origin"`
-	AllowedOrigins              types.List   `tfsdk:"allowed_origins"`
+	AllowedOrigins              types.Set    `tfsdk:"allowed_origins"`
 }
 
 func NewResource() resource.Resource { return &settingsResource{} }
@@ -102,7 +103,7 @@ func (r *settingsResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "Origin for custom redirects on development instances.",
 			},
-			"allowed_origins": schema.ListAttribute{
+			"allowed_origins": schema.SetAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "Allowed origins for cross-origin requests, for example native app schemes. " +
@@ -153,8 +154,9 @@ func (r *settingsResource) apply(ctx context.Context, plan *resourceModel, diags
 		diags.AddError("Updating instance settings", err.Error())
 		return
 	}
-	if !plan.AllowedOrigins.IsNull() && !plan.AllowedOrigins.IsUnknown() {
-		var origins []string
+	var origins []string
+	originsManaged := !plan.AllowedOrigins.IsNull() && !plan.AllowedOrigins.IsUnknown()
+	if originsManaged {
 		diags.Append(plan.AllowedOrigins.ElementsAs(ctx, &origins, false)...)
 		if diags.HasError() {
 			return
@@ -164,13 +166,41 @@ func (r *settingsResource) apply(ctx context.Context, plan *resourceModel, diags
 			return
 		}
 	}
-	instance, err := r.client.GetInstance(ctx)
+	// GET /instance can serve a stale allowed_origins right after the
+	// PATCH; a refresh in that window reports phantom drift. Wait, with a
+	// bound, until the read converges on what we just wrote.
+	var instance *clerkapi.Instance
+	var err error
+	for attempt := 0; attempt < 6; attempt++ {
+		instance, err = r.client.GetInstance(ctx)
+		if err != nil || !originsManaged || sameStringSet(instance.AllowedOrigins, origins) {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 	if err != nil {
 		diags.AddError("Reading instance", err.Error())
 		return
 	}
 	plan.ID = types.StringValue(instance.ID)
 	plan.EnvironmentType = types.StringValue(instance.EnvironmentType)
+}
+
+func sameStringSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	set := make(map[string]int, len(a))
+	for _, s := range a {
+		set[s]++
+	}
+	for _, s := range b {
+		set[s]--
+		if set[s] < 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *settingsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -202,7 +232,7 @@ func (r *settingsResource) Read(ctx context.Context, req resource.ReadRequest, r
 	// Refresh allowed_origins only when the configuration manages it. An
 	// unset attribute stays unmanaged and must not create a diff.
 	if !state.AllowedOrigins.IsNull() {
-		origins, diags := types.ListValueFrom(ctx, types.StringType, instance.AllowedOrigins)
+		origins, diags := types.SetValueFrom(ctx, types.StringType, instance.AllowedOrigins)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return

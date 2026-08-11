@@ -30,7 +30,7 @@ resource "clerk_instance_settings" "this" {
 
 ### Optional
 
-- `allowed_origins` (List of String) Allowed origins for cross-origin requests, for example native app schemes. The provider reads this list back and detects drift. Leave it unset to keep it unmanaged.
+- `allowed_origins` (Set of String) Allowed origins for cross-origin requests, for example native app schemes. The provider reads this list back and detects drift. Leave it unset to keep it unmanaged.
 - `clerk_js_version` (String) Pinned Clerk JS version for the hosted account pages. Set `""` to clear the pin.
 - `development_origin` (String) Origin for custom redirects on development instances.
 - `enhanced_email_deliverability` (Boolean) Send OTP verification emails through Clerk's shared domain via Postmark (production instances).

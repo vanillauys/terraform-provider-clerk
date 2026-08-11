@@ -1,0 +1,1 @@
+terraform import clerk_machine.worker mch_2abcDEFghiJKLmnoPQRstuVWXyz
