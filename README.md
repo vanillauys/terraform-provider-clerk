@@ -98,21 +98,25 @@ CLERK_SECRET_KEY=sk_test_... make testacc
 `make docs` renders the registry docs into `docs/` with tfplugindocs. CI
 fails when the generated docs drift from the schema.
 
-## Roadmap
+## Roadmap to v1.0.0
 
-The Clerk Backend API exposes many more resource groups. Candidates, in
-rough order of value:
+The provider grows in waves. Each wave ships as one tagged version with
+acceptance tests, import support, and generated docs.
 
-| API group | Candidate | Note |
-|-----------|-----------|------|
-| Instance settings | `clerk_instance_settings` | The API has update calls but no read call; the resource cannot detect drift. |
-| Domains | `clerk_domain` | Satellite domain management. |
-| Webhooks | `clerk_webhook` | Svix-backed. |
-| Organizations | `clerk_organization` + memberships, roles, permissions | |
-| OAuth applications | `clerk_oauth_application` | |
-| SAML connections | `clerk_saml_connection` | |
-| API keys, machines, M2M | `clerk_api_key`, `clerk_machine` | Newer API surface. |
-| Users, invitations | data sources first | User lifecycle fits Clerk better than Terraform. |
+| Version | Wave | Scope |
+|---------|------|-------|
+| v0.1.0 | Publish gate | Registry namespace, GPG release signing, first tag. No new resources. |
+| v0.2.0 | Instance plane | `clerk_instance_settings`, `clerk_instance_restrictions`, `clerk_instance_organization_settings`. Write-only API; documented drift caveat. |
+| v0.3.0 | API keys | `clerk_api_key`, `clerk_machine`, machine scopes. |
+| v0.4.0 | Domains and webhooks | `clerk_domain`, `clerk_webhook` (Svix), `clerk_jwks` data source. |
+| v0.5.0 | Organizations | `clerk_organization` plus roles, permissions, domains, memberships, and lookup data sources. |
+| v0.6.0 | SSO | `clerk_oauth_application`, `clerk_saml_connection`. |
+| v0.7.0 | Docs | Guides: getting started, dev and prod instances, adoption with import, secrets. |
+| v1.0.0 | Stable | After a dogfood gate: real stacks run on the registry build with an empty plan, and the nightly acceptance suite is green for 14 days. |
+
+The runtime plane stays out of scope: users, sessions, tokens,
+invitations, and the deprecated email/SMS template API. User lifecycle
+fits Clerk better than Terraform.
 
 ## License
 
