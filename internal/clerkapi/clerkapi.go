@@ -17,6 +17,11 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2/jwttemplate"
 	"github.com/clerk/clerk-sdk-go/v2/machine"
 	"github.com/clerk/clerk-sdk-go/v2/machinescope"
+	"github.com/clerk/clerk-sdk-go/v2/organization"
+	"github.com/clerk/clerk-sdk-go/v2/organizationdomain"
+	"github.com/clerk/clerk-sdk-go/v2/organizationmembership"
+	"github.com/clerk/clerk-sdk-go/v2/organizationpermission"
+	"github.com/clerk/clerk-sdk-go/v2/organizationrole"
 	"github.com/clerk/clerk-sdk-go/v2/redirecturl"
 	"github.com/clerk/clerk-sdk-go/v2/svixwebhook"
 )
@@ -37,6 +42,11 @@ type Client struct {
 	MachineScopes    *machinescope.Client
 	SvixWebhooks     *svixwebhook.Client
 	JWKS             *jwks.Client
+	Organizations    *organization.Client
+	OrgRoles         *organizationrole.Client
+	OrgPermissions   *organizationpermission.Client
+	OrgDomains       *organizationdomain.Client
+	OrgMemberships   *organizationmembership.Client
 
 	// backend serves the raw calls below for the endpoints that the SDK
 	// does not wrap yet.
@@ -66,6 +76,11 @@ func New(secretKey, apiURL, version string) *Client {
 		MachineScopes:    machinescope.NewClient(cfg),
 		SvixWebhooks:     svixwebhook.NewClient(cfg),
 		JWKS:             jwks.NewClient(cfg),
+		Organizations:    organization.NewClient(cfg),
+		OrgRoles:         organizationrole.NewClient(cfg),
+		OrgPermissions:   organizationpermission.NewClient(cfg),
+		OrgDomains:       organizationdomain.NewClient(cfg),
+		OrgMemberships:   organizationmembership.NewClient(cfg),
 		backend:          clerk.NewBackend(&cfg.BackendConfig),
 	}
 }

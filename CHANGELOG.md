@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-11
+
+- Add the `clerk_organization` resource with metadata support.
+- Add the `clerk_organization_permission` and `clerk_organization_role`
+  resources. A role's permission set updates in place as a whole list.
+- Add the `clerk_organization_domain` resource (import id
+  `organization_id/domain_id`). Needs `domains_enabled = true` on the
+  instance organization settings.
+- Add the `clerk_organization_membership` resource (import id
+  `organization_id/user_id`).
+- Add the `clerk_organization` data source with lookup by id or slug.
+
 ## [0.4.0] - 2026-08-11
 
 - Add the `clerk_domain` resource for satellite domains. The Backend API

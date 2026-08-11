@@ -1,0 +1,1 @@
+terraform import clerk_organization.acme org_2abcDEFghiJKLmnoPQRstuVWXyz

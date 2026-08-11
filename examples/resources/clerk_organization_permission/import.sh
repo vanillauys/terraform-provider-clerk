@@ -1,0 +1,1 @@
+terraform import clerk_organization_permission.invoices_read perm_2abcDEFghiJKLmnoPQRstuVWXyz

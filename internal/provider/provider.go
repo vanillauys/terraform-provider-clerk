@@ -14,10 +14,16 @@ import (
 	"github.com/vanillauys/terraform-provider-clerk/internal/clerkapi"
 	dsdomains "github.com/vanillauys/terraform-provider-clerk/internal/datasources/domains"
 	dsjwks "github.com/vanillauys/terraform-provider-clerk/internal/datasources/jwksds"
+	dsorganization "github.com/vanillauys/terraform-provider-clerk/internal/datasources/organizationds"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/apikey"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/domainres"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/identifier"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/machine"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/organization"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgdomain"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgmembership"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgpermission"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/orgrole"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/webhook"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instanceorgsettings"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancerestrictions"
@@ -128,6 +134,11 @@ func (p *ClerkProvider) Resources(_ context.Context) []func() resource.Resource 
 		machine.NewResource,
 		domainres.NewResource,
 		webhook.NewResource,
+		organization.NewResource,
+		orgpermission.NewResource,
+		orgrole.NewResource,
+		orgdomain.NewResource,
+		orgmembership.NewResource,
 	}
 }
 
@@ -135,5 +146,6 @@ func (p *ClerkProvider) DataSources(_ context.Context) []func() datasource.DataS
 	return []func() datasource.DataSource{
 		dsdomains.NewDataSource,
 		dsjwks.NewDataSource,
+		dsorganization.NewDataSource,
 	}
 }
