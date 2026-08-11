@@ -13,9 +13,12 @@ import (
 
 	"github.com/vanillauys/terraform-provider-clerk/internal/clerkapi"
 	dsdomains "github.com/vanillauys/terraform-provider-clerk/internal/datasources/domains"
+	dsjwks "github.com/vanillauys/terraform-provider-clerk/internal/datasources/jwksds"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/apikey"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/domainres"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/identifier"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/machine"
+	"github.com/vanillauys/terraform-provider-clerk/internal/resources/webhook"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instanceorgsettings"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancerestrictions"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/instancesettings"
@@ -123,11 +126,14 @@ func (p *ClerkProvider) Resources(_ context.Context) []func() resource.Resource 
 		instanceorgsettings.NewResource,
 		apikey.NewResource,
 		machine.NewResource,
+		domainres.NewResource,
+		webhook.NewResource,
 	}
 }
 
 func (p *ClerkProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		dsdomains.NewDataSource,
+		dsjwks.NewDataSource,
 	}
 }

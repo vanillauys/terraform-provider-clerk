@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-11
+
+- Add the `clerk_domain` resource for satellite domains. The Backend API
+  cannot create a primary domain; a primary-domain change stays in the
+  dashboard.
+- Add the `clerk_webhook` singleton resource: create enables the Svix
+  integration, destroy disables it. Write-only; the API has no read for it.
+- Add the `clerk_jwks` data source with the key ids and algorithms of the
+  instance.
+
 ## [0.3.0] - 2026-08-11
 
 - Add the `clerk_api_key` resource. The secret stays in state (sensitive)

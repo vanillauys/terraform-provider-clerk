@@ -1,0 +1,1 @@
+terraform import clerk_domain.satellite dmn_2abcDEFghiJKLmnoPQRstuVWXyz

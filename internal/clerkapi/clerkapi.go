@@ -13,10 +13,12 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2/blocklistidentifier"
 	"github.com/clerk/clerk-sdk-go/v2/domain"
 	"github.com/clerk/clerk-sdk-go/v2/instancesettings"
+	"github.com/clerk/clerk-sdk-go/v2/jwks"
 	"github.com/clerk/clerk-sdk-go/v2/jwttemplate"
 	"github.com/clerk/clerk-sdk-go/v2/machine"
 	"github.com/clerk/clerk-sdk-go/v2/machinescope"
 	"github.com/clerk/clerk-sdk-go/v2/redirecturl"
+	"github.com/clerk/clerk-sdk-go/v2/svixwebhook"
 )
 
 // Client holds one configured client per Clerk API group. Each provider
@@ -33,6 +35,8 @@ type Client struct {
 	APIKeys          *apikey.Client
 	Machines         *machine.Client
 	MachineScopes    *machinescope.Client
+	SvixWebhooks     *svixwebhook.Client
+	JWKS             *jwks.Client
 
 	// backend serves the raw calls below for the endpoints that the SDK
 	// does not wrap yet.
@@ -60,6 +64,8 @@ func New(secretKey, apiURL, version string) *Client {
 		APIKeys:          apikey.NewClient(cfg),
 		Machines:         machine.NewClient(cfg),
 		MachineScopes:    machinescope.NewClient(cfg),
+		SvixWebhooks:     svixwebhook.NewClient(cfg),
+		JWKS:             jwks.NewClient(cfg),
 		backend:          clerk.NewBackend(&cfg.BackendConfig),
 	}
 }
