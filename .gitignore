@@ -4,3 +4,9 @@
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+
+# Local agent and IDE state
+.claude/
+.superpowers/
+.idea/
+.DS_Store
