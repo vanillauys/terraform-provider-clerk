@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- clerk-sdk-go moves to v2.8.0. It replaces go-jose v3 with go-jose v4.1.6
+  for GHSA-mgcc-cww5-fp2q. go-jose v3 also had GHSA-4w3g-jfj2-cw2q and
+  GHSA-vvm8-gf78-28g4, with no fixed v3 release. The provider calls none of
+  the affected code. The Backend API version stays `2026-05-12`.
 - Each optional attribute with a fixed Clerk default now has that default
   in the schema. If you remove the attribute from the configuration, it
   reverts to the default. Before, Clerk kept the last value. The defaults

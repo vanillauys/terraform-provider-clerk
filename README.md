@@ -100,7 +100,7 @@ that it stays out of your repository.
 ## Compatibility
 
 - **Clerk Backend API:** the provider sends the API version that
-  clerk-sdk-go pins, in the `Clerk-API-Version` header. clerk-sdk-go v2.7.0
+  clerk-sdk-go pins, in the `Clerk-API-Version` header. clerk-sdk-go v2.8.0
   pins `2026-05-12`. An SDK upgrade that moves the API version gets its own
   minor release and a CHANGELOG note.
 - **Terraform:** 1.5 or later. The write-only attribute `signing_key_wo`

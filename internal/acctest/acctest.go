@@ -80,6 +80,9 @@ func TestUser(t *testing.T) string {
 			EmailAddresses:          &[]string{username + "+clerk_test@example.com"},
 			SkipPasswordRequirement: clerk.Bool(true),
 			SkipLegalChecks:         clerk.Bool(true),
+			// Clerk applies the allowlist and the blocklist to a created
+			// user. The identifier tests change both lists on this instance.
+			SkipRestrictionChecks: clerk.Bool(true),
 		})
 		var apiErr *clerk.APIErrorResponse
 		if err == nil || !errors.As(err, &apiErr) || apiErr.HTTPStatusCode != 422 {

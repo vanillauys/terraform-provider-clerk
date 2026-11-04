@@ -93,7 +93,7 @@ func New(secretKey, apiURL, version string) *Client {
 	}
 }
 
-// Instance is the response of GET /instance. The SDK (v2.7.0) does not
+// Instance is the response of GET /instance. The SDK (v2.8.0) does not
 // wrap this endpoint; remove this raw call when it does.
 type Instance struct {
 	clerk.APIResource
