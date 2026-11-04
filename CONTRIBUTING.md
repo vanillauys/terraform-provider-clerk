@@ -209,7 +209,8 @@ Every pull request runs these checks:
 A pull request from a fork gets no secrets, so `acceptance` and `sonar`
 skip it. The maintainer runs the suite for such a pull request before the
 merge. The `nightly` workflow runs the suite each night with Terraform
-1.5.7, the latest Terraform, and OpenTofu 1.12.9. All acceptance runs share
+1.5.7, the latest Terraform, and OpenTofu 1.12.9. It also fuzzes each
+`Fuzz` target for a minute. All acceptance runs share
 one concurrency group, because they share one instance. The `scorecard`
 workflow audits the repository each week.
 
@@ -256,6 +257,21 @@ staged changes for secrets with
 [gitleaks](https://github.com/gitleaks/gitleaks). The allowlist is in
 `.gitleaks.toml`. For a confirmed false positive, add a `gitleaks:allow`
 comment on the line or extend the allowlist. Do not use `--no-verify`.
+
+### Fuzz tests
+
+A function that parses input from outside the provider (a response header,
+a value that Clerk normalizes) gets a native Go fuzz test with a seed
+corpus. `make test` runs the seeds. To explore new inputs locally:
+
+```sh
+go test ./internal/clerkapi -run='^$' -fuzz='^FuzzRetryAfter$' -fuzztime=60s
+```
+
+A failing input lands in `testdata/fuzz/` of the package. Commit it with
+the fix: it then stays in the seed corpus.
+
+Add each new target to the `fuzz` job of `.github/workflows/nightly.yml`.
 
 ### Test layout
 

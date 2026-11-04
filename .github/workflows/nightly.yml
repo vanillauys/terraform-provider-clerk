@@ -34,3 +34,20 @@ jobs:
       version: ${{ matrix.version }}
     secrets:
       CLERK_SECRET_KEY_ACC: ${{ secrets.CLERK_SECRET_KEY_ACC }}
+  # Native Go fuzzing of the functions that read input from outside the
+  # provider: the Retry-After header of a rate-limited response, and the
+  # SAML certificate from the config or from Clerk. The unit job runs their
+  # seed corpus on every pull request; this job explores new inputs for a
+  # minute each. It needs no Clerk instance, so it runs in parallel with the
+  # acceptance matrix.
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go test ./internal/clerkapi -run='^$' -fuzz='^FuzzRetryAfter$' -fuzztime=60s
+      - run: go test ./internal/resources/samlconn -run='^$' -fuzz='^FuzzCertBody$' -fuzztime=60s
+      - run: go test ./internal/resources/samlconn -run='^$' -fuzz='^FuzzCertBodyText$' -fuzztime=60s

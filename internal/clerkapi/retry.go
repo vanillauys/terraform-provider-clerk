@@ -63,7 +63,9 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func retryAfter(header string, attempt int) time.Duration {
 	wait := time.Second << attempt
 	if s, err := strconv.Atoi(header); err == nil && s >= 0 {
-		wait = time.Duration(s) * time.Second
+		// Cap the seconds before the multiplication: a large value
+		// overflows time.Duration and gives a negative wait.
+		wait = time.Duration(min(s, int(maxWait/time.Second))) * time.Second
 	}
 	return min(wait, maxWait)
 }

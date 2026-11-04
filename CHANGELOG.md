@@ -90,7 +90,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   times, and waits as long as `Retry-After` asks (at most 30 seconds). Before,
   a large apply failed with "too_many_requests". The client also drops the
   SDK's 5-second timeout for the whole call; the Terraform operation and a
-  30-second header timeout for each attempt now bound it.
+  30-second header timeout for each attempt now bound it. A fuzz test
+  found that a very large `Retry-After` overflowed the wait; the provider
+  now caps the value before it computes the wait.
 - `clerk_organization_domain`: the read pages through all the domains of the
   organization. Before, it read only the first page of 10, so a domain on a
   later page dropped from the state.
