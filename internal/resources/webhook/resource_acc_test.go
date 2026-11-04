@@ -10,6 +10,10 @@ import (
 
 // The dev instance has Svix off; the test enables it and the destroy at
 // the end of the test disables it again — the prior state returns.
+// TestAccWebhook_basic needs an instance with the Svix integration off: the
+// create turns it on and the destroy turns it off. Clerk has no read
+// endpoint for the integration, so the test cannot check it first or
+// restore it, and it has no CheckDestroy.
 func TestAccWebhook_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },

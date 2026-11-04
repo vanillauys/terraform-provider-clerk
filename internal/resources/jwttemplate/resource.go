@@ -11,7 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -20,9 +23,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = (*jwtTemplateResource)(nil)
-	_ resource.ResourceWithConfigure   = (*jwtTemplateResource)(nil)
-	_ resource.ResourceWithImportState = (*jwtTemplateResource)(nil)
+	_ resource.Resource                   = (*jwtTemplateResource)(nil)
+	_ resource.ResourceWithConfigure      = (*jwtTemplateResource)(nil)
+	_ resource.ResourceWithImportState    = (*jwtTemplateResource)(nil)
+	_ resource.ResourceWithValidateConfig = (*jwtTemplateResource)(nil)
 )
 
 type jwtTemplateResource struct {
@@ -30,14 +34,16 @@ type jwtTemplateResource struct {
 }
 
 type resourceModel struct {
-	ID               types.String         `tfsdk:"id"`
-	Name             types.String         `tfsdk:"name"`
-	Claims           jsontypes.Normalized `tfsdk:"claims"`
-	Lifetime         types.Int64          `tfsdk:"lifetime"`
-	AllowedClockSkew types.Int64          `tfsdk:"allowed_clock_skew"`
-	CustomSigningKey types.Bool           `tfsdk:"custom_signing_key"`
-	SigningAlgorithm types.String         `tfsdk:"signing_algorithm"`
-	SigningKey       types.String         `tfsdk:"signing_key"`
+	ID                  types.String         `tfsdk:"id"`
+	Name                types.String         `tfsdk:"name"`
+	Claims              jsontypes.Normalized `tfsdk:"claims"`
+	Lifetime            types.Int64          `tfsdk:"lifetime"`
+	AllowedClockSkew    types.Int64          `tfsdk:"allowed_clock_skew"`
+	CustomSigningKey    types.Bool           `tfsdk:"custom_signing_key"`
+	SigningAlgorithm    types.String         `tfsdk:"signing_algorithm"`
+	SigningKey          types.String         `tfsdk:"signing_key"`
+	SigningKeyWo        types.String         `tfsdk:"signing_key_wo"`
+	SigningKeyWoVersion types.Int64          `tfsdk:"signing_key_wo_version"`
 }
 
 func NewResource() resource.Resource { return &jwtTemplateResource{} }
@@ -65,6 +71,7 @@ func (r *jwtTemplateResource) Schema(_ context.Context, _ resource.SchemaRequest
 			"claims": schema.StringAttribute{
 				Optional:   true,
 				Computed:   true,
+				Default:    stringdefault.StaticString("{}"),
 				CustomType: jsontypes.NormalizedType{},
 				Description: "JSON object with the custom claims. Values support the Clerk shortcodes, " +
 					"for example `{{user.public_metadata.role}}`. Defaults to `{}`.",
@@ -72,30 +79,67 @@ func (r *jwtTemplateResource) Schema(_ context.Context, _ resource.SchemaRequest
 			"lifetime": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Token lifetime in seconds. The Clerk default is 60.",
+				Default:     int64default.StaticInt64(60),
+				Description: "Token lifetime in seconds. Defaults to `60`.",
 			},
 			"allowed_clock_skew": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Allowed clock skew in seconds. The Clerk default is 5.",
+				Default:     int64default.StaticInt64(5),
+				Description: "Allowed clock skew in seconds. Defaults to `5`.",
 			},
 			"custom_signing_key": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Set to `true` to sign tokens with your own key instead of the instance key.",
+				Default:     booldefault.StaticBool(false),
+				Description: "Set to `true` to sign tokens with your own key instead of the instance key. Defaults to `false`.",
 			},
 			"signing_algorithm": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Signing algorithm, for example `RS256` or `HS256`.",
+				Default:     stringdefault.StaticString("RS256"),
+				Description: "Signing algorithm, for example `RS256` or `HS256`. Defaults to `RS256`.",
 			},
 			"signing_key": schema.StringAttribute{
 				Optional:  true,
 				Sensitive: true,
 				Description: "Private key for a custom signing key. Clerk never returns this value; " +
-					"the provider keeps the configured value in state and cannot detect server-side drift.",
+					"the provider keeps the configured value in state and cannot detect server-side drift. " +
+					"If you remove it, Clerk keeps the last key; set `custom_signing_key = false` to stop using it. " +
+					"To keep the key out of the state, use `signing_key_wo` instead.",
+			},
+			"signing_key_wo": schema.StringAttribute{
+				Optional:  true,
+				WriteOnly: true,
+				Sensitive: true,
+				Description: "Write-only form of `signing_key`. Terraform keeps it out of the plan and the state. " +
+					"It needs Terraform 1.11 or later. Do not set it together with `signing_key`. " +
+					"A new value reaches Clerk only when `signing_key_wo_version` changes.",
+			},
+			"signing_key_wo_version": schema.Int64Attribute{
+				Optional: true,
+				Description: "Version of `signing_key_wo`. Change it to send the current `signing_key_wo` value " +
+					"to Clerk. It needs `signing_key_wo`.",
 			},
 		},
+	}
+}
+
+// ValidateConfig rejects signing_key together with signing_key_wo, and a
+// version without the write-only value.
+func (r *jwtTemplateResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var m resourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &m)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !m.SigningKey.IsNull() && !m.SigningKeyWo.IsNull() {
+		resp.Diagnostics.AddAttributeError(path.Root("signing_key_wo"), "Conflicting signing key",
+			"Set `signing_key` or `signing_key_wo`, not both.")
+	}
+	if !m.SigningKeyWoVersion.IsNull() && m.SigningKeyWo.IsNull() {
+		resp.Diagnostics.AddAttributeError(path.Root("signing_key_wo_version"), "Missing signing_key_wo",
+			"`signing_key_wo_version` needs `signing_key_wo`.")
 	}
 }
 
@@ -167,7 +211,17 @@ func (r *jwtTemplateResource) Create(ctx context.Context, req resource.CreateReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	created, err := r.client.JWTTemplates.Create(ctx, createParams(plan))
+	// Only the config carries a write-only value; the plan holds null.
+	var wo types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("signing_key_wo"), &wo)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	params := createParams(plan)
+	if !wo.IsNull() && !wo.IsUnknown() {
+		params.SigningKey = clerk.String(wo.ValueString())
+	}
+	created, err := r.client.JWTTemplates.Create(ctx, params)
 	if err != nil {
 		resp.Diagnostics.AddError("Creating JWT template", err.Error())
 		return
@@ -203,7 +257,21 @@ func (r *jwtTemplateResource) Update(ctx context.Context, req resource.UpdateReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	updated, err := r.client.JWTTemplates.Update(ctx, plan.ID.ValueString(), updateParams(plan))
+	var state resourceModel
+	var wo types.String
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("signing_key_wo"), &wo)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	params := updateParams(plan)
+	// The plan cannot show a new write-only value, so the version gates it.
+	// A config that moves from signing_key to signing_key_wo sends it too.
+	if !wo.IsNull() && !wo.IsUnknown() &&
+		(!plan.SigningKeyWoVersion.Equal(state.SigningKeyWoVersion) || !state.SigningKey.IsNull()) {
+		params.SigningKey = clerk.String(wo.ValueString())
+	}
+	updated, err := r.client.JWTTemplates.Update(ctx, plan.ID.ValueString(), params)
 	if err != nil {
 		resp.Diagnostics.AddError("Updating JWT template", err.Error())
 		return

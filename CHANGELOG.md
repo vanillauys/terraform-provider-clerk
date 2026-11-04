@@ -1,6 +1,103 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
+
+### Added
+
+- `clerk_jwt_template`: `signing_key_wo` and `signing_key_wo_version`, the
+  write-only form of `signing_key`. Terraform keeps the key out of the plan
+  and the state. It needs Terraform 1.11 or later. Change
+  `signing_key_wo_version` to send a new key.
+- The `clerk_organizations` data source lists the organizations of the
+  instance. The optional `query` matches the id, the name, or the slug.
+
+### Changed
+
+- Each optional attribute with a fixed Clerk default now has that default
+  in the schema. If you remove the attribute from the configuration, it
+  reverts to the default. Before, Clerk kept the last value. The defaults
+  are the values that Clerk sets on create:
+  - `clerk_jwt_template`: `lifetime` 60, `allowed_clock_skew` 5,
+    `custom_signing_key` false, `signing_algorithm` `RS256`, `claims` `{}`.
+  - `clerk_machine`: `default_token_ttl` 3600, `scoped_machines` empty.
+  - `clerk_api_key`: `claims` `{}`, `scopes` empty.
+  - `clerk_oauth_application`: `public` false, `consent_screen_enabled`
+    true.
+  - `clerk_organization`: `admin_delete_enabled` true, `public_metadata`
+    and `private_metadata` `{}`.
+  - `clerk_organization_role`: `permissions` empty.
+  - `clerk_saml_connection`: `active`, `allow_subdomains`,
+    `allow_idp_initiated` and `force_authn` false, `sync_user_attributes`
+    true.
+
+  **Upgrade note:** if a resource holds a value that is not the default, and
+  the configuration does not set the attribute, the next plan changes the
+  value to the default. This can occur after an import, or after a change in
+  the dashboard. Before you apply, set the attribute in the configuration
+  to keep the value.
+- `clerk_oauth_application`: `scopes` defaults to `"email profile"`, which
+  Clerk stores as its default `email offline_access profile`. Before, a
+  removed `scopes` kept the last value on the server.
+- **BREAKING:** `clerk_instance_organization_settings.domains_enrollment_modes`
+  is now a set. Clerk returns the modes sorted, so a list in another order
+  failed the apply with "Provider produced inconsistent result". An existing
+  state loads with no change.
+- `clerk_api_key`: an update sends `seconds_until_expiration` only when the
+  value changes. Before, an unrelated change, for example to the
+  description, restarted the lifetime.
+- `clerk_organization` `slug`, `max_allowed_memberships` and `created_by`,
+  and the `clerk_saml_connection` `idp_` fields, have no fixed default:
+  Clerk derives them. Their descriptions say what occurs when you remove
+  them.
+- `clerk_organization_domain`: `enrollment_mode` defaults to
+  `manual_invitation`. Clerk rejects a create without a mode, so a
+  configuration without it failed before. If you remove the attribute, it
+  reverts to the default.
+- The indirect Go modules with known vulnerabilities move to fixed
+  versions: golang.org/x/net v0.62.0, golang.org/x/text v0.43.0,
+  google.golang.org/grpc v1.85.0 and github.com/go-jose/go-jose/v3 v3.0.5.
+
+- The Go toolchain moves to 1.26.10. `govulncheck` reported GO-2026-6809 in
+  the Go 1.26.9 `crypto/x509` package.
+- CI runs the acceptance suite on each pull request and each push to
+  `master`, SonarQube Cloud analysis with the merged coverage, OpenSSF
+  Scorecard, and CodeQL. The nightly run tests Terraform 1.5.7, the latest
+  Terraform, and OpenTofu 1.12.9.
+- Each release archive carries a GitHub build provenance attestation. Verify
+  an archive with `gh attestation verify <archive> --owner vanillauys`.
+
+### Fixed
+
+- If you remove an optional attribute from the configuration, Clerk now
+  clears the value. Before, the apply failed with "Provider produced
+  inconsistent result". This applies to:
+  - `description` on `clerk_organization_permission`,
+    `clerk_organization_role`, and `clerk_api_key`.
+  - `proxy_url` on `clerk_domain`.
+  - `organization_id` on `clerk_saml_connection`.
+- `clerk_api_key`: if you remove all `scopes`, Clerk now clears them. The
+  SDK dropped an empty scopes list from the update request.
+- `clerk_saml_connection`: a PEM `idp_certificate` no longer fails the apply
+  with "Provider produced inconsistent result". Clerk stores the bare
+  base64 form, and the provider now keeps the configured form.
+- `clerk_saml_connection`: if the update after the create fails, the error
+  now shows the id of the connection that Clerk created.
+- `clerk_organization_domain`: the read pages through all the domains of the
+  organization. Before, it read only the first page of 10, so a domain on a
+  later page dropped from the state.
+- `clerk_organization` and `clerk_saml_connection`: if the update after the
+  create fails, the state keeps the created record. Before, the record
+  leaked and the next apply made a duplicate.
+- `clerk_api_key` and `clerk_machine`: if the record goes away between the
+  read and the secret read, the resource leaves the state. Before, the
+  refresh failed.
+- `clerk_organization_membership`: the read filters by `user_id`. Before,
+  the read searched only the first page of 10 members. In a larger
+  organization, a membership could drop from the state.
 
 ## [0.7.0] - 2026-08-11
 

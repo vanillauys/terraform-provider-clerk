@@ -29,7 +29,7 @@ resource "clerk_instance_organization_settings" "this" {
 - `creator_role_id` (String) Role id for the organization creator. Clerk returns the role name, not the id, so this input is write-only; the name surfaces in `creator_role`.
 - `domains_default_role_id` (String) Default role id for domain enrollment. Write-only, like `creator_role_id`; the name surfaces in `domains_default_role`.
 - `domains_enabled` (Boolean) Enable verified domains for organizations.
-- `domains_enrollment_modes` (List of String) Enrollment modes for verified domains: `manual_invitation` and/or `automatic_invitation`, `automatic_suggestion`.
+- `domains_enrollment_modes` (Set of String) Enrollment modes for verified domains: `manual_invitation` and/or `automatic_invitation`, `automatic_suggestion`.
 - `enabled` (Boolean) Enable the organizations feature.
 - `max_allowed_memberships` (Number) Maximum members per organization. `0` means unlimited.
 

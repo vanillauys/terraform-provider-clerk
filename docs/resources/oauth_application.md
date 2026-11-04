@@ -35,9 +35,9 @@ output "partner_portal_client_secret" {
 
 ### Optional
 
-- `consent_screen_enabled` (Boolean) Show the consent screen in the authorization flow.
-- `public` (Boolean) `true` for a public client (PKCE, no secret). Create-only: a change forces a replacement.
-- `scopes` (String) Space-separated scopes, for example `"profile email"`. Clerk normalizes the value server-side (order, plus a forced `offline_access`); the provider keeps the configured value in state and cannot detect server-side drift on this field.
+- `consent_screen_enabled` (Boolean) Show the consent screen in the authorization flow. Defaults to `true`.
+- `public` (Boolean) `true` for a public client (PKCE, no secret). Create-only: a change forces a replacement. Defaults to `false`.
+- `scopes` (String) Space-separated scopes, for example `"profile email"`. Clerk normalizes the value server-side (order, plus a forced `offline_access`); the provider keeps the configured value in state and cannot detect server-side drift on this field. Defaults to `"email profile"`, which Clerk stores as its own default `email offline_access profile`.
 
 ### Read-Only
 

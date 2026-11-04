@@ -35,7 +35,7 @@ resource "clerk_organization_role" "billing_admin" {
 ### Optional
 
 - `description` (String) Free-form description.
-- `permissions` (Set of String) Ids of the permissions of this role (`perm_...`). The whole set updates in place.
+- `permissions` (Set of String) Ids of the permissions of this role (`perm_...`). The whole set updates in place. Defaults to an empty set.
 
 ### Read-Only
 

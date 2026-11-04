@@ -1,0 +1,103 @@
+name: acceptance-suite
+# The shared acceptance job. acceptance.yml (pull requests and pushes to
+# master) and nightly.yml (cron and manual) call it, so a fix to the suite
+# cannot land in one caller and miss the other. The job uploads the coverage
+# data of the suite as an artifact; the sonar job in acceptance.yml merges it
+# with the unit coverage for SonarQube Cloud.
+on:
+  workflow_call:
+    inputs:
+      # The CLI that drives the suite: `terraform` or `opentofu`, and its
+      # version. The pull request run uses the defaults; nightly.yml runs
+      # the matrix that backs the compatibility claim of the README.
+      tool:
+        type: string
+        default: terraform
+      version:
+        type: string
+        default: "1.16.4"
+    secrets:
+      CLERK_SECRET_KEY_ACC:
+        required: false
+    outputs:
+      coverage-artifact:
+        value: ${{ jobs.acceptance.outputs.coverage-artifact }}
+      ran:
+        value: ${{ jobs.acceptance.outputs.ran }}
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      coverage-artifact: ${{ steps.artifact.outputs.name }}
+      ran: ${{ steps.key.outputs.ran }}
+    env:
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_ACC }}
+    steps:
+      # A pull request from a fork gets no secrets. The suite then skips, and
+      # the job says so in the log instead of a silent green run.
+      - id: key
+        run: |
+          set -euo pipefail
+          if [[ -z "$CLERK_SECRET_KEY" ]]; then
+            echo "::notice::CLERK_SECRET_KEY_ACC is not set; the acceptance suite does not run."
+            echo "ran=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Refuse a production key: the suite changes the instance settings.
+          if [[ "$CLERK_SECRET_KEY" != sk_test_* ]]; then
+            echo "::error::CLERK_SECRET_KEY_ACC is not a development key (sk_test_)."
+            exit 1
+          fi
+          echo "ran=true" >> "$GITHUB_OUTPUT"
+      - if: steps.key.outputs.ran == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.key.outputs.ran == 'true'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # terraform-plugin-testing downloads a CLI in every test package unless
+      # TF_ACC_TERRAFORM_PATH names one. One pinned install serves every
+      # package and takes the network out of the test binaries. The wrapper
+      # is off, so the path is the real binary.
+      - if: steps.key.outputs.ran == 'true' && inputs.tool == 'terraform'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ inputs.version }}
+          terraform_wrapper: false
+      - if: steps.key.outputs.ran == 'true' && inputs.tool == 'opentofu'
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ inputs.version }}
+          tofu_wrapper: false
+      # OpenTofu looks for the provider under test on registry.opentofu.org,
+      # so the test framework must register it there (TF_ACC_PROVIDER_HOST).
+      # The upgrade test installs the released provider from the registry and
+      # skips on OpenTofu: vanillauys/clerk is not on that registry yet.
+      - name: Run acceptance tests
+        if: steps.key.outputs.ran == 'true'
+        env:
+          TOOL: ${{ inputs.tool }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          if [[ "$TOOL" == opentofu ]]; then
+            export TF_ACC_PROVIDER_HOST=registry.opentofu.org
+            cli="$(command -v tofu)"
+          else
+            cli="$(command -v terraform)"
+          fi
+          COVERDIR="$GITHUB_WORKSPACE/coverage" TF_ACC_TERRAFORM_PATH="$cli" make testacc
+      - id: artifact
+        if: steps.key.outputs.ran == 'true'
+        env:
+          TOOL: ${{ inputs.tool }}
+          VERSION: ${{ inputs.version }}
+        run: echo "name=acceptance-coverage-${TOOL}-${VERSION}" >> "$GITHUB_OUTPUT"
+      - if: steps.key.outputs.ran == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: coverage

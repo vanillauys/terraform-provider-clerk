@@ -87,18 +87,14 @@ func flatten(p *clerk.OrganizationPermission, m *resourceModel) {
 	m.ID = types.StringValue(p.ID)
 	m.Name = types.StringValue(p.Name)
 	m.Key = types.StringValue(p.Key)
-	m.Description = types.StringPointerValue(p.Description)
+	m.Description = tfutil.NullIfEmpty(p.Description)
 	m.Type = types.StringValue(p.Type)
 }
 
 func params(m resourceModel) (*string, *string, *string) {
 	name := clerk.String(m.Name.ValueString())
 	key := clerk.String(m.Key.ValueString())
-	var description *string
-	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		description = clerk.String(m.Description.ValueString())
-	}
-	return name, key, description
+	return name, key, tfutil.ClearableString(m.Description)
 }
 
 func (r *permissionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

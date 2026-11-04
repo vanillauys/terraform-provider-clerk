@@ -128,8 +128,11 @@ func (r *membershipResource) Read(ctx context.Context, req resource.ReadRequest,
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	// The user_id filter returns the one membership. Without it, the first
+	// page holds only some of the members of a large organization.
 	list, err := r.client.OrgMemberships.List(ctx, &sdkorgmembership.ListParams{
 		OrganizationID: state.OrganizationID.ValueString(),
+		UserIDs:        []string{state.UserID.ValueString()},
 	})
 	if clerkapi.IsNotFound(err) {
 		// The whole organization is gone.

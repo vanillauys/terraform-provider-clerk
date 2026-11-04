@@ -33,6 +33,9 @@ func TestAccInstanceSettings_basic(t *testing.T) {
 		}
 	})
 
+	// test_mode is write-only, so the test cannot read and restore it. A
+	// development instance runs with test mode on, which is the value that
+	// the config sets.
 	config := func(origins string) string {
 		return `
 resource "clerk_instance_settings" "test" {

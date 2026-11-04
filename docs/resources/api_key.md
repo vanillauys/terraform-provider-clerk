@@ -38,10 +38,10 @@ output "backend_api_key" {
 
 ### Optional
 
-- `claims` (String) JSON object with custom claims for the key.
+- `claims` (String) JSON object with custom claims for the key. Defaults to `{}`.
 - `description` (String) Free-form description.
-- `scopes` (Set of String) Scopes of the key, for example `["read", "write"]`.
-- `seconds_until_expiration` (Number) Lifetime of the key in seconds, counted from the moment of the call. Clerk does not return this value; the computed `expiration` timestamp does. Leave it unset for a key without an expiration.
+- `scopes` (Set of String) Scopes of the key, for example `["read", "write"]`. Defaults to an empty set.
+- `seconds_until_expiration` (Number) Lifetime of the key in seconds, counted from the moment of the call. Clerk does not return this value; the computed `expiration` timestamp does. Leave it unset for a key without an expiration. A new value restarts the count. If you remove it, the key keeps its current expiration.
 
 ### Read-Only
 

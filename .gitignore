@@ -8,5 +8,8 @@
 # Local agent and IDE state
 .claude/
 .superpowers/
+.serena/
 .idea/
 .DS_Store
+coverage/
+coverage.out

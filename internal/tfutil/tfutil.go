@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/vanillauys/terraform-provider-clerk/internal/clerkapi"
 )
@@ -26,4 +27,22 @@ func ClientFromProviderData(providerData any) (*clerkapi.Client, diag.Diagnostic
 		return nil, diags
 	}
 	return c, diags
+}
+
+// ClearableString converts an optional string for an update request. A null
+// value becomes "": Clerk ignores an absent field, and only "" clears the
+// value on the server. Use it with NullIfEmpty on the read side.
+func ClearableString(v types.String) *string {
+	s := v.ValueString()
+	return &s
+}
+
+// NullIfEmpty converts a string that Clerk returns for an optional attribute.
+// Clerk returns "" or null for a cleared value; both become null, so the
+// state matches a configuration that omits the attribute.
+func NullIfEmpty(s *string) types.String {
+	if s == nil || *s == "" {
+		return types.StringNull()
+	}
+	return types.StringValue(*s)
 }

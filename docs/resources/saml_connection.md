@@ -45,16 +45,16 @@ output "saml_sp_entity_id" {
 
 ### Optional
 
-- `active` (Boolean) Enable the connection for sign-ins.
-- `allow_idp_initiated` (Boolean) Allow identity-provider-initiated flows.
-- `allow_subdomains` (Boolean) Match subdomains of `domain` too.
-- `force_authn` (Boolean) Force re-authentication at the identity provider on each sign-in.
+- `active` (Boolean) Enable the connection for sign-ins. Defaults to `false`.
+- `allow_idp_initiated` (Boolean) Allow identity-provider-initiated flows. Defaults to `false`.
+- `allow_subdomains` (Boolean) Match subdomains of `domain` too. Defaults to `false`.
+- `force_authn` (Boolean) Force re-authentication at the identity provider on each sign-in. Defaults to `false`.
 - `idp_certificate` (String) X.509 certificate of the identity provider.
 - `idp_entity_id` (String) Entity id of the identity provider.
-- `idp_metadata_url` (String) Metadata URL of the identity provider. Clerk fills the idp fields from it.
+- `idp_metadata_url` (String) Metadata URL of the identity provider. Clerk fills the other `idp_` fields from it, so the `idp_` fields have no default: if you remove one, the connection keeps its current value.
 - `idp_sso_url` (String) Single-sign-on URL of the identity provider.
 - `organization_id` (String) Restrict the connection to one organization.
-- `sync_user_attributes` (Boolean) Update user attributes from the identity provider on each sign-in.
+- `sync_user_attributes` (Boolean) Update user attributes from the identity provider on each sign-in. Defaults to `true`.
 
 ### Read-Only
 

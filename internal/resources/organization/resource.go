@@ -13,7 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -65,25 +68,36 @@ func (r *organizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "Organization name.",
 			},
 			"slug": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "URL-safe slug. Clerk derives one from the name when unset.",
+				Optional: true,
+				Computed: true,
+				Description: "URL-safe slug. If you do not set it, Clerk makes one from the name. " +
+					"If you remove it later, the organization keeps its current slug.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"max_allowed_memberships": schema.Int64Attribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Maximum members. `0` means unlimited.",
+				Optional: true,
+				Computed: true,
+				Description: "Maximum members. `0` means unlimited. If you do not set it, Clerk copies " +
+					"the instance default from `clerk_instance_organization_settings`. If you remove it later, " +
+					"the organization keeps its current value.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"admin_delete_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Allow organization admins to delete the organization.",
+				Default:     booldefault.StaticBool(true),
+				Description: "Allow organization admins to delete the organization. Defaults to `true`.",
 			},
 			"created_by": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
 				Description: "User id of the creator. Create-only: a change forces a replacement. " +
-					"When set, Clerk adds this user as the first admin member.",
+					"When set, Clerk adds this user as the first admin member. Clerk uses it only on create, " +
+					"so if you remove it, the state keeps the creator.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 					stringplanmodifier.UseStateForUnknown(),
@@ -93,13 +107,15 @@ func (r *organizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				CustomType:  jsontypes.NormalizedType{},
-				Description: "JSON object, visible to the frontend.",
+				Default:     stringdefault.StaticString("{}"),
+				Description: "JSON object, visible to the frontend. Defaults to `{}`.",
 			},
 			"private_metadata": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				CustomType:  jsontypes.NormalizedType{},
-				Description: "JSON object, visible to the backend only.",
+				Default:     stringdefault.StaticString("{}"),
+				Description: "JSON object, visible to the backend only. Defaults to `{}`.",
 			},
 		},
 	}
@@ -202,16 +218,20 @@ func (r *organizationResource) Create(ctx context.Context, req resource.CreateRe
 		resp.Diagnostics.AddError("Creating organization", err.Error())
 		return
 	}
-	// admin_delete_enabled exists only on the update endpoint.
-	if !plan.AdminDeleteEnabled.IsNull() && !plan.AdminDeleteEnabled.IsUnknown() {
-		created, err = r.client.Organizations.Update(ctx, created.ID, &sdkorganization.UpdateParams{
+	// admin_delete_enabled exists only on the update endpoint. Clerk creates
+	// the organization with the default, so the update runs only for false.
+	if !plan.AdminDeleteEnabled.IsUnknown() && plan.AdminDeleteEnabled.ValueBool() != created.AdminDeleteEnabled {
+		updated, err := r.client.Organizations.Update(ctx, created.ID, &sdkorganization.UpdateParams{
 			AdminDeleteEnabled: clerk.Bool(plan.AdminDeleteEnabled.ValueBool()),
 		})
 		if err != nil {
+			// Keep the first response: on an error, the SDK returns an empty
+			// organization without an id.
 			r.recordPartialCreate(ctx, created, &plan, &resp.Diagnostics, resp)
 			resp.Diagnostics.AddError("Setting admin_delete_enabled after create", err.Error())
 			return
 		}
+		created = updated
 	}
 	flatten(created, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

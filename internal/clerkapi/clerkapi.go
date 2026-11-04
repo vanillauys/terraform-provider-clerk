@@ -4,6 +4,7 @@ package clerkapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -124,6 +125,40 @@ func (c *Client) UpdateAllowedOrigins(ctx context.Context, origins []string) err
 	req := clerk.NewAPIRequest(http.MethodPatch, "/instance")
 	req.SetParams(&updateAllowedOriginsParams{AllowedOrigins: origins})
 	return c.backend.Call(ctx, req, &clerk.APIResource{})
+}
+
+type updateAPIKeyParams struct {
+	clerk.APIParams
+	Claims json.RawMessage `json:"claims,omitempty"`
+	// No omitempty: an empty list must reach the API to clear the scopes.
+	Scopes                 []string `json:"scopes"`
+	Description            *string  `json:"description,omitempty"`
+	Subject                *string  `json:"subject,omitempty"`
+	SecondsUntilExpiration *int64   `json:"seconds_until_expiration,omitempty"`
+}
+
+// UpdateAPIKey calls PATCH /api_keys/{id}. The SDK's apikey.UpdateParams
+// drops an empty scopes list (omitempty), so the SDK cannot clear the scopes.
+func (c *Client) UpdateAPIKey(ctx context.Context, id string, p *apikey.UpdateParams) (*clerk.APIKey, error) {
+	path, err := clerk.JoinPath("/api_keys", id)
+	if err != nil {
+		return nil, err
+	}
+	scopes := p.Scopes
+	if scopes == nil {
+		scopes = []string{}
+	}
+	req := clerk.NewAPIRequest(http.MethodPatch, path)
+	req.SetParams(&updateAPIKeyParams{
+		Claims:                 p.Claims,
+		Scopes:                 scopes,
+		Description:            p.Description,
+		Subject:                p.Subject,
+		SecondsUntilExpiration: p.SecondsUntilExpiration,
+	})
+	key := &clerk.APIKey{}
+	err = c.backend.Call(ctx, req, key)
+	return key, err
 }
 
 // IsNotFound reports whether err is a Clerk API response with HTTP status

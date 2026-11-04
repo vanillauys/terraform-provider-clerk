@@ -35,8 +35,8 @@ resource "clerk_machine" "api" {
 
 ### Optional
 
-- `default_token_ttl` (Number) Default lifetime in seconds for tokens that this machine mints.
-- `scoped_machines` (Set of String) Ids of the machines this machine can mint tokens for.
+- `default_token_ttl` (Number) Default lifetime in seconds for tokens that this machine mints. Defaults to `3600`.
+- `scoped_machines` (Set of String) Ids of the machines this machine can mint tokens for. Defaults to an empty set.
 
 ### Read-Only
 

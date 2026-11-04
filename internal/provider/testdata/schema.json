@@ -1,0 +1,1171 @@
+{
+  "provider": {
+    "version": 0,
+    "block": {
+      "attributes": [
+        {
+          "name": "api_url",
+          "type": "tftypes.String",
+          "optional": true
+        },
+        {
+          "name": "secret_key",
+          "type": "tftypes.String",
+          "optional": true,
+          "sensitive": true
+        }
+      ]
+    }
+  },
+  "resources": {
+    "clerk_allowlist_identifier": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "identifier",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "identifier_type",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "notify",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false",
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          }
+        ]
+      }
+    },
+    "clerk_api_key": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "claims",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"{}\""
+          },
+          {
+            "name": "description",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "expiration",
+            "type": "tftypes.Number",
+            "computed": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "scopes",
+            "type": "tftypes.Set[tftypes.String]",
+            "optional": true,
+            "computed": true,
+            "default": "[]"
+          },
+          {
+            "name": "seconds_until_expiration",
+            "type": "tftypes.Number",
+            "optional": true
+          },
+          {
+            "name": "secret",
+            "type": "tftypes.String",
+            "computed": true,
+            "sensitive": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "subject",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "type",
+            "type": "tftypes.String",
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_blocklist_identifier": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "identifier",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "identifier_type",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          }
+        ]
+      }
+    },
+    "clerk_domain": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "development_origin",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "frontend_api_url",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "is_satellite",
+            "type": "tftypes.Bool",
+            "computed": true
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "proxy_url",
+            "type": "tftypes.String",
+            "optional": true
+          }
+        ]
+      }
+    },
+    "clerk_instance_organization_settings": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "admin_delete_enabled",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "creator_role",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "creator_role_id",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "domains_default_role",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "domains_default_role_id",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "domains_enabled",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "domains_enrollment_modes",
+            "type": "tftypes.Set[tftypes.String]",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "enabled",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "max_allowed_memberships",
+            "type": "tftypes.Number",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "max_allowed_permissions",
+            "type": "tftypes.Number",
+            "computed": true
+          },
+          {
+            "name": "max_allowed_roles",
+            "type": "tftypes.Number",
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_instance_restrictions": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "allowlist",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "block_disposable_email_domains",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "block_email_subaddresses",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "blocklist",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "ignore_dots_for_gmail_addresses",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_instance_settings": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "allowed_origins",
+            "type": "tftypes.Set[tftypes.String]",
+            "optional": true
+          },
+          {
+            "name": "clerk_js_version",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "development_origin",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "enhanced_email_deliverability",
+            "type": "tftypes.Bool",
+            "optional": true
+          },
+          {
+            "name": "environment_type",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "hibp",
+            "type": "tftypes.Bool",
+            "optional": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "support_email",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "test_mode",
+            "type": "tftypes.Bool",
+            "optional": true
+          },
+          {
+            "name": "url_based_session_syncing",
+            "type": "tftypes.Bool",
+            "optional": true
+          }
+        ]
+      }
+    },
+    "clerk_jwt_template": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "allowed_clock_skew",
+            "type": "tftypes.Number",
+            "optional": true,
+            "computed": true,
+            "default": "5"
+          },
+          {
+            "name": "claims",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"{}\""
+          },
+          {
+            "name": "custom_signing_key",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false"
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "lifetime",
+            "type": "tftypes.Number",
+            "optional": true,
+            "computed": true,
+            "default": "60"
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "signing_algorithm",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"RS256\""
+          },
+          {
+            "name": "signing_key",
+            "type": "tftypes.String",
+            "optional": true,
+            "sensitive": true
+          },
+          {
+            "name": "signing_key_wo",
+            "type": "tftypes.String",
+            "optional": true,
+            "sensitive": true,
+            "write_only": true
+          },
+          {
+            "name": "signing_key_wo_version",
+            "type": "tftypes.Number",
+            "optional": true
+          }
+        ]
+      }
+    },
+    "clerk_machine": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "default_token_ttl",
+            "type": "tftypes.Number",
+            "optional": true,
+            "computed": true,
+            "default": "3600"
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "scoped_machines",
+            "type": "tftypes.Set[tftypes.String]",
+            "optional": true,
+            "computed": true,
+            "default": "[]"
+          },
+          {
+            "name": "secret_key",
+            "type": "tftypes.String",
+            "computed": true,
+            "sensitive": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          }
+        ]
+      }
+    },
+    "clerk_oauth_application": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "authorize_url",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "callback_url",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "client_id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "client_secret",
+            "type": "tftypes.String",
+            "computed": true,
+            "sensitive": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "consent_screen_enabled",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "true"
+          },
+          {
+            "name": "discovery_url",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "public",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false",
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource.",
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "scopes",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"email profile\""
+          },
+          {
+            "name": "token_fetch_url",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "user_info_url",
+            "type": "tftypes.String",
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_organization": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "admin_delete_enabled",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "true"
+          },
+          {
+            "name": "created_by",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "plan_modifiers": [
+              "If the value of this attribute is configured and changes, Terraform will destroy and recreate the resource.",
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "max_allowed_memberships",
+            "type": "tftypes.Number",
+            "optional": true,
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "private_metadata",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"{}\""
+          },
+          {
+            "name": "public_metadata",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"{}\""
+          },
+          {
+            "name": "slug",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          }
+        ]
+      }
+    },
+    "clerk_organization_domain": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "enrollment_mode",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true,
+            "default": "\"manual_invitation\""
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "organization_id",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "verification_status",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "verified",
+            "type": "tftypes.Bool",
+            "optional": true
+          }
+        ]
+      }
+    },
+    "clerk_organization_membership": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "organization_id",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "role",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "role_name",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "user_id",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          }
+        ]
+      }
+    },
+    "clerk_organization_permission": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "description",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "key",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "type",
+            "type": "tftypes.String",
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_organization_role": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "description",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "is_creator_eligible",
+            "type": "tftypes.Bool",
+            "computed": true
+          },
+          {
+            "name": "key",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "permissions",
+            "type": "tftypes.Set[tftypes.String]",
+            "optional": true,
+            "computed": true,
+            "default": "[]"
+          }
+        ]
+      }
+    },
+    "clerk_redirect_url": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "url",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          }
+        ]
+      }
+    },
+    "clerk_saml_connection": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "acs_url",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "active",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false"
+          },
+          {
+            "name": "allow_idp_initiated",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false"
+          },
+          {
+            "name": "allow_subdomains",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false"
+          },
+          {
+            "name": "domain",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "force_authn",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "false"
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "idp_certificate",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "idp_entity_id",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "idp_metadata_url",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "idp_sso_url",
+            "type": "tftypes.String",
+            "optional": true,
+            "computed": true
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "organization_id",
+            "type": "tftypes.String",
+            "optional": true
+          },
+          {
+            "name": "provider_key",
+            "type": "tftypes.String",
+            "required": true,
+            "plan_modifiers": [
+              "If the value of this attribute changes, Terraform will destroy and recreate the resource."
+            ]
+          },
+          {
+            "name": "sp_entity_id",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "sp_metadata_url",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "sync_user_attributes",
+            "type": "tftypes.Bool",
+            "optional": true,
+            "computed": true,
+            "default": "true"
+          }
+        ]
+      }
+    },
+    "clerk_webhook": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          },
+          {
+            "name": "svix_url",
+            "type": "tftypes.String",
+            "computed": true,
+            "sensitive": true,
+            "plan_modifiers": [
+              "Once set, the value of this attribute in state will not change."
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "data_sources": {
+    "clerk_domains": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "domains",
+            "nested": {
+              "nesting": "LIST",
+              "attributes": [
+                {
+                  "name": "accounts_portal_url",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "cname_targets",
+                  "nested": {
+                    "nesting": "LIST",
+                    "attributes": [
+                      {
+                        "name": "host",
+                        "type": "tftypes.String",
+                        "computed": true
+                      },
+                      {
+                        "name": "value",
+                        "type": "tftypes.String",
+                        "computed": true
+                      }
+                    ]
+                  },
+                  "computed": true
+                },
+                {
+                  "name": "development_origin",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "frontend_api_url",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "id",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "is_satellite",
+                  "type": "tftypes.Bool",
+                  "computed": true
+                },
+                {
+                  "name": "name",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "proxy_url",
+                  "type": "tftypes.String",
+                  "computed": true
+                }
+              ]
+            },
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_jwks": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "keys",
+            "nested": {
+              "nesting": "LIST",
+              "attributes": [
+                {
+                  "name": "algorithm",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "kid",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "use",
+                  "type": "tftypes.String",
+                  "computed": true
+                }
+              ]
+            },
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_organization": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "admin_delete_enabled",
+            "type": "tftypes.Bool",
+            "computed": true
+          },
+          {
+            "name": "id",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "lookup",
+            "type": "tftypes.String",
+            "required": true
+          },
+          {
+            "name": "max_allowed_memberships",
+            "type": "tftypes.Number",
+            "computed": true
+          },
+          {
+            "name": "name",
+            "type": "tftypes.String",
+            "computed": true
+          },
+          {
+            "name": "slug",
+            "type": "tftypes.String",
+            "computed": true
+          }
+        ]
+      }
+    },
+    "clerk_organizations": {
+      "version": 0,
+      "block": {
+        "attributes": [
+          {
+            "name": "organizations",
+            "nested": {
+              "nesting": "LIST",
+              "attributes": [
+                {
+                  "name": "admin_delete_enabled",
+                  "type": "tftypes.Bool",
+                  "computed": true
+                },
+                {
+                  "name": "id",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "max_allowed_memberships",
+                  "type": "tftypes.Number",
+                  "computed": true
+                },
+                {
+                  "name": "name",
+                  "type": "tftypes.String",
+                  "computed": true
+                },
+                {
+                  "name": "slug",
+                  "type": "tftypes.String",
+                  "computed": true
+                }
+              ]
+            },
+            "computed": true
+          },
+          {
+            "name": "query",
+            "type": "tftypes.String",
+            "optional": true
+          }
+        ]
+      }
+    }
+  }
+}

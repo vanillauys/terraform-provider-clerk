@@ -1,7 +1,8 @@
 # gitleaks configuration for terraform-provider-clerk
 # Docs: https://github.com/gitleaks/gitleaks#configuration
 #
-# The .githooks/pre-commit hook uses this file to scan staged changes.
+# The .githooks/pre-commit hook uses this file to scan staged changes. The
+# gitleaks workflow uses it to scan the tree and the commits of a pull request.
 
 title = "terraform-provider-clerk"
 

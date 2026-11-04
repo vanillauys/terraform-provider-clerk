@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -73,9 +74,11 @@ func (r *orgDomainResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"enrollment_mode": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "`manual_invitation`, `automatic_invitation`, or `automatic_suggestion`.",
+				Optional: true,
+				Computed: true,
+				Default:  stringdefault.StaticString("manual_invitation"),
+				Description: "`manual_invitation`, `automatic_invitation`, `automatic_suggestion`, or " +
+					"`enterprise_sso`. Defaults to `manual_invitation`.",
 			},
 			"verified": schema.BoolAttribute{
 				Optional: true,
@@ -142,21 +145,32 @@ func (r *orgDomainResource) Read(ctx context.Context, req resource.ReadRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	list, err := r.client.OrgDomains.List(ctx, state.OrganizationID.ValueString(), &sdkorgdomain.ListParams{})
-	if clerkapi.IsNotFound(err) {
-		// The whole organization is gone.
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Listing organization domains", err.Error())
-		return
-	}
-	for _, d := range list.OrganizationDomains {
-		if d.ID == state.ID.ValueString() {
-			flatten(d, &state)
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	// Clerk pages the list (default 10). Read every page until the id
+	// matches or the list ends.
+	const pageSize = 100
+	for offset := int64(0); ; offset += pageSize {
+		params := &sdkorgdomain.ListParams{}
+		params.Limit = clerk.Int64(pageSize)
+		params.Offset = clerk.Int64(offset)
+		list, err := r.client.OrgDomains.List(ctx, state.OrganizationID.ValueString(), params)
+		if clerkapi.IsNotFound(err) {
+			// The whole organization is gone.
+			resp.State.RemoveResource(ctx)
 			return
+		}
+		if err != nil {
+			resp.Diagnostics.AddError("Listing organization domains", err.Error())
+			return
+		}
+		for _, d := range list.OrganizationDomains {
+			if d.ID == state.ID.ValueString() {
+				flatten(d, &state)
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+				return
+			}
+		}
+		if int64(len(list.OrganizationDomains)) < pageSize || offset+pageSize >= list.TotalCount {
+			break
 		}
 	}
 	resp.Diagnostics.AddWarning("Organization domain not found",

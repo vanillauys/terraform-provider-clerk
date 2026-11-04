@@ -31,7 +31,7 @@ resource "clerk_organization_domain" "acme" {
 
 ### Optional
 
-- `enrollment_mode` (String) `manual_invitation`, `automatic_invitation`, or `automatic_suggestion`.
+- `enrollment_mode` (String) `manual_invitation`, `automatic_invitation`, `automatic_suggestion`, or `enterprise_sso`. Defaults to `manual_invitation`.
 - `verified` (Boolean) Mark the domain verified without an email check. Clerk reports the result in `verification_status`, not in this field; the input is write-only.
 
 ### Read-Only

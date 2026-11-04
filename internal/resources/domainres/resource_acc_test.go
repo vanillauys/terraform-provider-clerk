@@ -7,6 +7,7 @@ import (
 
 	sdkdomain "github.com/clerk/clerk-sdk-go/v2/domain"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/vanillauys/terraform-provider-clerk/internal/acctest"
@@ -14,13 +15,18 @@ import (
 
 func TestAccDomain_basic(t *testing.T) {
 	name := fmt.Sprintf("%s.example.com", acctest.RandomName("tf-acc"))
+	// An empty proxyPath drops proxy_url from the config.
 	config := func(proxyPath string) string {
+		proxy := ""
+		if proxyPath != "" {
+			proxy = fmt.Sprintf("proxy_url = %q", "https://"+name+"/"+proxyPath)
+		}
 		return fmt.Sprintf(`
 resource "clerk_domain" "test" {
-  name      = %q
-  proxy_url = "https://%s/%s"
+  name = %q
+  %s
 }
-`, name, name, proxyPath)
+`, name, proxy)
 	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
@@ -45,6 +51,16 @@ resource "clerk_domain" "test" {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			{
+				Config: config(""),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("clerk_domain.test", "proxy_url"),
+					checkProxyCleared,
+				),
+			},
 		},
 	})
 }
@@ -66,6 +82,26 @@ func checkDestroy(s *terraform.State) error {
 			if d.ID == rs.Primary.ID {
 				return fmt.Errorf("domain %s still exists", rs.Primary.ID)
 			}
+		}
+	}
+	return nil
+}
+
+// checkProxyCleared reads the domain from the API: a removed proxy_url must
+// be gone on the server, not only in the state.
+func checkProxyCleared(s *terraform.State) error {
+	c, err := acctest.ClientFromEnv()
+	if err != nil {
+		return err
+	}
+	list, err := c.Domains.List(context.Background(), &sdkdomain.ListParams{})
+	if err != nil {
+		return err
+	}
+	id := s.RootModule().Resources["clerk_domain.test"].Primary.ID
+	for _, d := range list.Domains {
+		if d.ID == id && d.ProxyURL != nil && *d.ProxyURL != "" {
+			return fmt.Errorf("proxy_url is %q on the server, want empty", *d.ProxyURL)
 		}
 	}
 	return nil

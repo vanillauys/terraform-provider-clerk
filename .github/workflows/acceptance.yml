@@ -1,0 +1,50 @@
+name: acceptance
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+# Every acceptance run shares one Clerk development instance, and the tests
+# change its singletons (settings, restrictions, organization settings). One
+# group for this workflow and nightly.yml keeps two runs off the instance at
+# the same time. A run never cancels another one that is in progress.
+concurrency:
+  group: clerk-acceptance-instance
+  cancel-in-progress: false
+jobs:
+  # The suite itself lives in acceptance-suite.yml, shared with nightly.yml.
+  # It runs on every push to master as well, so the SonarQube Cloud analysis
+  # of master carries the coverage of the merged commit.
+  acceptance:
+    uses: ./.github/workflows/acceptance-suite.yml
+    secrets:
+      CLERK_SECRET_KEY_ACC: ${{ secrets.CLERK_SECRET_KEY_ACC }}
+  # SonarQube Cloud analysis. It runs after the suite, because the suite is
+  # what covers the resource code. The job merges the coverage data of the
+  # suite with the unit coverage into one profile and runs the scanner. A
+  # pull request from a fork has no SONAR_TOKEN, so the job skips it.
+  # sonar-project.properties holds the scanner configuration.
+  sonar:
+    needs: acceptance
+    if: needs.acceptance.outputs.ran == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The scanner needs the full history to find the new code.
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.acceptance.outputs.coverage-artifact }}
+          path: coverage
+      - run: COVERDIR="$GITHUB_WORKSPACE/coverage" make test
+      - run: go tool covdata textfmt -i=coverage -o=coverage.out
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

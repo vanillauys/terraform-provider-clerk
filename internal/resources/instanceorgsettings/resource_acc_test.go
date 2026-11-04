@@ -8,6 +8,7 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2"
 	sdkinstancesettings "github.com/clerk/clerk-sdk-go/v2/instancesettings"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 
 	"github.com/vanillauys/terraform-provider-clerk/internal/acctest"
 )
@@ -65,6 +66,18 @@ resource "clerk_instance_organization_settings" "test" {
 			{
 				Config: config("3"),
 				Check:  resource.TestCheckResourceAttr("clerk_instance_organization_settings.test", "max_allowed_memberships", "3"),
+			},
+			{
+				// Clerk returns the modes sorted. The config lists them in
+				// another order, so the step proves that the order does not
+				// matter (a list gave an inconsistent result here).
+				Config: config(`3
+  domains_enabled          = true
+  domains_enrollment_modes = ["manual_invitation", "automatic_suggestion", "automatic_invitation"]`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: resource.TestCheckResourceAttr("clerk_instance_organization_settings.test", "domains_enrollment_modes.#", "3"),
 			},
 			{
 				ResourceName:      "clerk_instance_organization_settings.test",

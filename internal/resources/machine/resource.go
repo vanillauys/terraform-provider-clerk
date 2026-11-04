@@ -11,11 +11,14 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2"
 	sdkmachine "github.com/clerk/clerk-sdk-go/v2/machine"
 	sdkmachinescope "github.com/clerk/clerk-sdk-go/v2/machinescope"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -65,13 +68,15 @@ func (r *machineResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"default_token_ttl": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Default lifetime in seconds for tokens that this machine mints.",
+				Default:     int64default.StaticInt64(3600),
+				Description: "Default lifetime in seconds for tokens that this machine mints. Defaults to `3600`.",
 			},
 			"scoped_machines": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "Ids of the machines this machine can mint tokens for.",
+				Default:     setdefault.StaticValue(types.SetValueMust(types.StringType, []attr.Value{})),
+				Description: "Ids of the machines this machine can mint tokens for. Defaults to an empty set.",
 			},
 			"secret_key": schema.StringAttribute{
 				Computed:    true,
@@ -153,6 +158,11 @@ func (r *machineResource) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 	flatten(ctx, m, &state, &resp.Diagnostics)
 	secret, err := r.client.Machines.GetSecretKey(ctx, m.ID)
+	if clerkapi.IsNotFound(err) {
+		// The machine went away between the two calls.
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Reading machine secret key", err.Error())
 		return

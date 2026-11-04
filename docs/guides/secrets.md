@@ -36,12 +36,29 @@ These attributes carry real secrets:
 | `clerk_api_key.secret` | Read keeps it fresh; an import recovers it. |
 | `clerk_machine.secret_key` | Same. |
 | `clerk_oauth_application.client_secret` | Create-once; an import cannot recover it. |
-| `clerk_jwt_template.signing_key` | Write-only; the state keeps your input. |
+| `clerk_jwt_template.signing_key` | Clerk never returns it; the state keeps your input. Use `signing_key_wo` to keep it out. |
 | `clerk_webhook.svix_url` | A short-lived dashboard login link. |
 
 The provider marks them `sensitive`, so plans redact them. The state file
 does not: treat the state itself as a secret. Store it encrypted, restrict
 access to it, and never commit it.
+
+## Keep the signing key out of the state
+
+With Terraform 1.11 or later, set the write-only `signing_key_wo` instead of
+`signing_key`. Terraform sends it to Clerk but keeps it out of the plan and
+the state. The plan cannot show a new write-only value, so change
+`signing_key_wo_version` to send a new key:
+
+```terraform
+resource "clerk_jwt_template" "api" {
+  name                   = "api"
+  custom_signing_key     = true
+  signing_algorithm      = "RS256"
+  signing_key_wo         = var.jwt_signing_key
+  signing_key_wo_version = 1
+}
+```
 
 ## Consume secrets from other resources
 

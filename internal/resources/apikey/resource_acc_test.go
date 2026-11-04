@@ -6,48 +6,29 @@ import (
 	"os"
 	"testing"
 
-	"github.com/clerk/clerk-sdk-go/v2"
-	sdkuser "github.com/clerk/clerk-sdk-go/v2/user"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/vanillauys/terraform-provider-clerk/internal/acctest"
 	"github.com/vanillauys/terraform-provider-clerk/internal/clerkapi"
 )
 
-// firstUserID picks an existing user of the dev instance as the key
-// subject. The pick is read-only.
-func firstUserID(t *testing.T, ctx context.Context) string {
-	t.Helper()
-	cfg := &clerk.ClientConfig{}
-	cfg.Key = clerk.String(os.Getenv("CLERK_SECRET_KEY"))
-	if u := os.Getenv("CLERK_API_URL"); u != "" {
-		cfg.URL = clerk.String(u)
-	}
-	list, err := sdkuser.NewClient(cfg).List(ctx, &sdkuser.ListParams{})
-	if err != nil {
-		t.Fatalf("listing users: %v", err)
-	}
-	if len(list.Users) == 0 {
-		t.Skip("the instance has no users; clerk_api_key needs a subject")
-	}
-	return list.Users[0].ID
-}
-
 func TestAccAPIKey_basic(t *testing.T) {
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("TF_ACC not set")
 	}
 	acctest.PreCheck(t)
-	subject := firstUserID(t, context.Background())
+	subject := acctest.TestUser(t)
 	name := acctest.RandomName("tf-acc-key")
+	// expiration holds the timestamp after the first apply with a lifetime.
+	var expiration string
 
 	config := func(extra string) string {
 		return fmt.Sprintf(`
 resource "clerk_api_key" "test" {
   name    = %q
   subject = %q
-  scopes  = ["read"]
 %s
 }
 `, name, subject, extra)
@@ -58,26 +39,64 @@ resource "clerk_api_key" "test" {
 		CheckDestroy:             checkDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: config(""),
+				Config: config(`  scopes = ["read"]`),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("clerk_api_key.test", "id"),
 					resource.TestCheckResourceAttr("clerk_api_key.test", "name", name),
 					resource.TestCheckResourceAttr("clerk_api_key.test", "subject", subject),
 					resource.TestCheckResourceAttr("clerk_api_key.test", "scopes.#", "1"),
+					resource.TestCheckResourceAttr("clerk_api_key.test", "claims", "{}"),
 					resource.TestCheckResourceAttrSet("clerk_api_key.test", "secret"),
 					resource.TestCheckResourceAttr("clerk_api_key.test", "type", "api_key"),
 				),
 			},
 			{
-				Config: config(`  description = "acceptance test key"`),
+				Config: config(`  scopes      = ["read"]
+  description = "acceptance test key"
+  claims      = jsonencode({ env = "acc" })
+  seconds_until_expiration = 86400`),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("clerk_api_key.test", "description", "acceptance test key"),
+					resource.TestCheckResourceAttr("clerk_api_key.test", "claims", `{"env":"acc"}`),
+					resource.TestCheckResourceAttrWith("clerk_api_key.test", "expiration", func(v string) error {
+						expiration = v
+						return nil
+					}),
 				),
 			},
 			{
 				ResourceName:      "clerk_api_key.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// Clerk does not return the lifetime, only the expiration.
+				ImportStateVerifyIgnore: []string{"seconds_until_expiration"},
+			},
+			{
+				// An unrelated change must not restart the lifetime count.
+				Config: config(`  scopes      = ["read"]
+  description = "acceptance test key, renamed"
+  claims      = jsonencode({ env = "acc" })
+  seconds_until_expiration = 86400`),
+				Check: resource.TestCheckResourceAttrWith("clerk_api_key.test", "expiration", func(v string) error {
+					if v != expiration {
+						return fmt.Errorf("expiration moved from %s to %s", expiration, v)
+					}
+					return nil
+				}),
+			},
+			{
+				// Remove every optional attribute: description reverts to null,
+				// claims and scopes revert to their defaults.
+				Config: config(""),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("clerk_api_key.test", "description"),
+					resource.TestCheckResourceAttr("clerk_api_key.test", "claims", "{}"),
+					resource.TestCheckResourceAttr("clerk_api_key.test", "scopes.#", "0"),
+					checkDescriptionCleared,
+				),
 			},
 		},
 	})
@@ -99,6 +118,27 @@ func checkDestroy(s *terraform.State) error {
 		if !clerkapi.IsNotFound(err) {
 			return err
 		}
+	}
+	return nil
+}
+
+// checkDescriptionCleared reads the key from the API: a removed description
+// must be gone on the server, and the removed claims and scopes must hold
+// their defaults there, not only in the state.
+func checkDescriptionCleared(s *terraform.State) error {
+	c, err := acctest.ClientFromEnv()
+	if err != nil {
+		return err
+	}
+	k, err := c.APIKeys.Get(context.Background(), s.RootModule().Resources["clerk_api_key.test"].Primary.ID)
+	if err != nil {
+		return err
+	}
+	if k.Description != nil && *k.Description != "" {
+		return fmt.Errorf("description is %q on the server, want empty", *k.Description)
+	}
+	if string(k.Claims) != "{}" || len(k.Scopes) != 0 {
+		return fmt.Errorf("key holds claims=%s scopes=%v, want {} and none", k.Claims, k.Scopes)
 	}
 	return nil
 }

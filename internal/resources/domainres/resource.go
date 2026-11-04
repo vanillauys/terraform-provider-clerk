@@ -94,7 +94,7 @@ func (r *domainResource) Configure(_ context.Context, req resource.ConfigureRequ
 func flatten(d *clerk.Domain, m *resourceModel) {
 	m.ID = types.StringValue(d.ID)
 	m.Name = types.StringValue(d.Name)
-	m.ProxyURL = types.StringPointerValue(d.ProxyURL)
+	m.ProxyURL = tfutil.NullIfEmpty(d.ProxyURL)
 	m.IsSatellite = types.BoolValue(d.IsSatellite)
 	m.FrontendAPIURL = types.StringValue(d.FrontendAPIURL)
 	m.DevelopmentOrigin = types.StringValue(d.DevelopmentOrigin)
@@ -152,10 +152,8 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 	params := &sdkdomain.UpdateParams{
-		Name: clerk.String(plan.Name.ValueString()),
-	}
-	if !plan.ProxyURL.IsNull() && !plan.ProxyURL.IsUnknown() {
-		params.ProxyURL = clerk.String(plan.ProxyURL.ValueString())
+		Name:     clerk.String(plan.Name.ValueString()),
+		ProxyURL: tfutil.ClearableString(plan.ProxyURL),
 	}
 	updated, err := r.client.Domains.Update(ctx, plan.ID.ValueString(), params)
 	if err != nil {

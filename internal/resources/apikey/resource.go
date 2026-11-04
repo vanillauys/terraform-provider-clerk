@@ -14,11 +14,14 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2"
 	sdkapikey "github.com/clerk/clerk-sdk-go/v2/apikey"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -87,19 +90,22 @@ func (r *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Optional:    true,
 				Computed:    true,
 				CustomType:  jsontypes.NormalizedType{},
-				Description: "JSON object with custom claims for the key.",
+				Default:     stringdefault.StaticString("{}"),
+				Description: "JSON object with custom claims for the key. Defaults to `{}`.",
 			},
 			"scopes": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "Scopes of the key, for example `[\"read\", \"write\"]`.",
+				Default:     setdefault.StaticValue(types.SetValueMust(types.StringType, []attr.Value{})),
+				Description: "Scopes of the key, for example `[\"read\", \"write\"]`. Defaults to an empty set.",
 			},
 			"seconds_until_expiration": schema.Int64Attribute{
 				Optional: true,
 				Description: "Lifetime of the key in seconds, counted from the moment of the call. " +
 					"Clerk does not return this value; the computed `expiration` timestamp does. " +
-					"Leave it unset for a key without an expiration.",
+					"Leave it unset for a key without an expiration. A new value restarts the count. " +
+					"If you remove it, the key keeps its current expiration.",
 			},
 			"expiration": schema.Int64Attribute{
 				Computed:    true,
@@ -135,11 +141,12 @@ func flatten(ctx context.Context, k *clerk.APIKey, m *resourceModel, diags *diag
 	m.ID = types.StringValue(k.ID)
 	m.Name = types.StringValue(k.Name)
 	m.Subject = types.StringValue(k.Subject)
-	m.Description = types.StringPointerValue(k.Description)
+	m.Description = tfutil.NullIfEmpty(k.Description)
 	if len(k.Claims) > 0 && string(k.Claims) != "null" {
 		m.Claims = jsontypes.NewNormalizedValue(string(k.Claims))
 	} else {
-		m.Claims = jsontypes.NewNormalizedNull()
+		// A key that Clerk created without claims returns null; {} is the default.
+		m.Claims = jsontypes.NewNormalizedValue("{}")
 	}
 	scopes, d := types.SetValueFrom(ctx, types.StringType, k.Scopes)
 	diags.Append(d...)
@@ -208,6 +215,11 @@ func (r *apiKeyResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 	flatten(ctx, k, &state, &resp.Diagnostics)
 	secret, err := r.client.APIKeys.GetSecret(ctx, k.ID)
+	if clerkapi.IsNotFound(err) {
+		// The key went away between the two calls.
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("Reading API key secret", err.Error())
 		return
@@ -224,10 +236,8 @@ func (r *apiKeyResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 	params := &sdkapikey.UpdateParams{
-		Subject: clerk.String(plan.Subject.ValueString()),
-	}
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		params.Description = clerk.String(plan.Description.ValueString())
+		Subject:     clerk.String(plan.Subject.ValueString()),
+		Description: tfutil.ClearableString(plan.Description),
 	}
 	if !plan.Claims.IsNull() && !plan.Claims.IsUnknown() {
 		params.Claims = json.RawMessage(plan.Claims.ValueString())
@@ -238,10 +248,13 @@ func (r *apiKeyResource) Update(ctx context.Context, req resource.UpdateRequest,
 			return
 		}
 	}
-	if !plan.SecondsUntilExpiration.IsNull() && !plan.SecondsUntilExpiration.IsUnknown() {
+	// Clerk counts the lifetime from the moment of the call, so the update
+	// sends it only when it changes: an unrelated change keeps the expiration.
+	if !plan.SecondsUntilExpiration.IsNull() && !plan.SecondsUntilExpiration.IsUnknown() &&
+		!plan.SecondsUntilExpiration.Equal(state.SecondsUntilExpiration) {
 		params.SecondsUntilExpiration = clerk.Int64(plan.SecondsUntilExpiration.ValueInt64())
 	}
-	updated, err := r.client.APIKeys.Update(ctx, plan.ID.ValueString(), params)
+	updated, err := r.client.UpdateAPIKey(ctx, plan.ID.ValueString(), params)
 	if err != nil {
 		resp.Diagnostics.AddError("Updating API key", err.Error())
 		return

@@ -41,7 +41,7 @@ type resourceModel struct {
 	MaxAllowedMemberships  types.Int64  `tfsdk:"max_allowed_memberships"`
 	AdminDeleteEnabled     types.Bool   `tfsdk:"admin_delete_enabled"`
 	DomainsEnabled         types.Bool   `tfsdk:"domains_enabled"`
-	DomainsEnrollmentModes types.List   `tfsdk:"domains_enrollment_modes"`
+	DomainsEnrollmentModes types.Set    `tfsdk:"domains_enrollment_modes"`
 	CreatorRoleID          types.String `tfsdk:"creator_role_id"`
 	DomainsDefaultRoleID   types.String `tfsdk:"domains_default_role_id"`
 	CreatorRole            types.String `tfsdk:"creator_role"`
@@ -88,7 +88,7 @@ func (r *orgSettingsResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				Description: "Enable verified domains for organizations.",
 			},
-			"domains_enrollment_modes": schema.ListAttribute{
+			"domains_enrollment_modes": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
@@ -165,7 +165,7 @@ func flatten(ctx context.Context, res *clerk.OrganizationSettings, m *resourceMo
 	m.MaxAllowedMemberships = types.Int64Value(res.MaxAllowedMemberships)
 	m.AdminDeleteEnabled = types.BoolValue(res.AdminDeleteEnabled)
 	m.DomainsEnabled = types.BoolValue(res.DomainsEnabled)
-	modes, d := types.ListValueFrom(ctx, types.StringType, res.DomainsEnrollmentModes)
+	modes, d := types.SetValueFrom(ctx, types.StringType, res.DomainsEnrollmentModes)
 	diags.Append(d...)
 	m.DomainsEnrollmentModes = modes
 	m.CreatorRole = types.StringValue(res.CreatorRole)

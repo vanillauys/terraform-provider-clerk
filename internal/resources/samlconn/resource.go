@@ -4,12 +4,14 @@ package samlconn
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	sdksamlconnection "github.com/clerk/clerk-sdk-go/v2/samlconnection"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -102,34 +104,40 @@ func (r *samlResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "X.509 certificate of the identity provider.",
 			},
 			"idp_metadata_url": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Metadata URL of the identity provider. Clerk fills the idp fields from it.",
+				Optional: true,
+				Computed: true,
+				Description: "Metadata URL of the identity provider. Clerk fills the other `idp_` fields from it, " +
+					"so the `idp_` fields have no default: if you remove one, the connection keeps its current value.",
 			},
 			"active": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Enable the connection for sign-ins.",
+				Default:     booldefault.StaticBool(false),
+				Description: "Enable the connection for sign-ins. Defaults to `false`.",
 			},
 			"sync_user_attributes": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Update user attributes from the identity provider on each sign-in.",
+				Default:     booldefault.StaticBool(true),
+				Description: "Update user attributes from the identity provider on each sign-in. Defaults to `true`.",
 			},
 			"allow_subdomains": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Match subdomains of `domain` too.",
+				Default:     booldefault.StaticBool(false),
+				Description: "Match subdomains of `domain` too. Defaults to `false`.",
 			},
 			"allow_idp_initiated": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Allow identity-provider-initiated flows.",
+				Default:     booldefault.StaticBool(false),
+				Description: "Allow identity-provider-initiated flows. Defaults to `false`.",
 			},
 			"force_authn": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Force re-authentication at the identity provider on each sign-in.",
+				Default:     booldefault.StaticBool(false),
+				Description: "Force re-authentication at the identity provider on each sign-in. Defaults to `false`.",
 			},
 			"acs_url": schema.StringAttribute{
 				Computed:    true,
@@ -160,10 +168,15 @@ func flatten(s *clerk.SAMLConnection, m *resourceModel) {
 	m.Name = types.StringValue(s.Name)
 	m.Domain = types.StringValue(s.Domain)
 	m.Provider = types.StringValue(s.Provider)
-	m.OrganizationID = types.StringPointerValue(s.OrganizationID)
+	m.OrganizationID = tfutil.NullIfEmpty(s.OrganizationID)
 	m.IdpEntityID = types.StringPointerValue(s.IdpEntityID)
 	m.IdpSsoURL = types.StringPointerValue(s.IdpSsoURL)
-	m.IdpCertificate = types.StringPointerValue(s.IdpCertificate)
+	// Clerk stores the certificate as bare base64. Keep a PEM value from the
+	// config or the state when it encodes the same certificate.
+	if s.IdpCertificate == nil || m.IdpCertificate.IsNull() || m.IdpCertificate.IsUnknown() ||
+		certBody(m.IdpCertificate.ValueString()) != certBody(*s.IdpCertificate) {
+		m.IdpCertificate = types.StringPointerValue(s.IdpCertificate)
+	}
 	m.IdpMetadataURL = types.StringPointerValue(s.IdpMetadataURL)
 	m.Active = types.BoolValue(s.Active)
 	m.SyncUserAttributes = types.BoolValue(s.SyncUserAttributes)
@@ -173,6 +186,14 @@ func flatten(s *clerk.SAMLConnection, m *resourceModel) {
 	m.AcsURL = types.StringValue(s.AcsURL)
 	m.SPEntityID = types.StringValue(s.SPEntityID)
 	m.SPMetadataURL = types.StringValue(s.SPMetadataURL)
+}
+
+// certBody returns the base64 body of a certificate: without the PEM
+// header, the PEM footer, and the whitespace.
+func certBody(c string) string {
+	c = strings.ReplaceAll(c, "-----BEGIN CERTIFICATE-----", "")
+	c = strings.ReplaceAll(c, "-----END CERTIFICATE-----", "")
+	return strings.Join(strings.Fields(c), "")
 }
 
 func stringParam(v types.String) *string {
@@ -210,23 +231,24 @@ func (r *samlResource) Create(ctx context.Context, req resource.CreateRequest, r
 		resp.Diagnostics.AddError("Creating SAML connection", err.Error())
 		return
 	}
-	// active and the sync switches exist only on the update endpoint.
-	updateNeeded := boolParam(plan.Active) != nil || boolParam(plan.SyncUserAttributes) != nil ||
-		boolParam(plan.AllowSubdomains) != nil || boolParam(plan.AllowIdpInitiated) != nil
-	if updateNeeded {
-		created, err = r.client.SAMLConnections.Update(ctx, created.ID, &sdksamlconnection.UpdateParams{
-			Active:             boolParam(plan.Active),
-			SyncUserAttributes: boolParam(plan.SyncUserAttributes),
-			AllowSubdomains:    boolParam(plan.AllowSubdomains),
-			AllowIdpInitiated:  boolParam(plan.AllowIdpInitiated),
-		})
-		if err != nil {
-			resp.Diagnostics.AddError("Configuring SAML connection after create",
-				fmt.Sprintf("connection %s was created, but the follow-up update failed: %s", created.ID, err))
-			return
-		}
+	// active and the sync switches exist only on the update endpoint. Each
+	// one has a default, so the follow-up update always runs.
+	updated, err := r.client.SAMLConnections.Update(ctx, created.ID, &sdksamlconnection.UpdateParams{
+		Active:             boolParam(plan.Active),
+		SyncUserAttributes: boolParam(plan.SyncUserAttributes),
+		AllowSubdomains:    boolParam(plan.AllowSubdomains),
+		AllowIdpInitiated:  boolParam(plan.AllowIdpInitiated),
+	})
+	if err != nil {
+		// Keep the created connection in state, so the framework taints it
+		// and the next apply replaces it instead of leaking it.
+		flatten(created, &plan)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		resp.Diagnostics.AddError("Configuring SAML connection after create",
+			fmt.Sprintf("connection %s was created, but the follow-up update failed: %s", created.ID, err))
+		return
 	}
-	flatten(created, &plan)
+	flatten(updated, &plan)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -260,7 +282,7 @@ func (r *samlResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	updated, err := r.client.SAMLConnections.Update(ctx, plan.ID.ValueString(), &sdksamlconnection.UpdateParams{
 		Name:               clerk.String(plan.Name.ValueString()),
 		Domain:             clerk.String(plan.Domain.ValueString()),
-		OrganizationID:     stringParam(plan.OrganizationID),
+		OrganizationID:     tfutil.ClearableString(plan.OrganizationID),
 		IdpEntityID:        stringParam(plan.IdpEntityID),
 		IdpSsoURL:          stringParam(plan.IdpSsoURL),
 		IdpCertificate:     stringParam(plan.IdpCertificate),

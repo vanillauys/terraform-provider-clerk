@@ -9,11 +9,13 @@ import (
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	sdkorgrole "github.com/clerk/clerk-sdk-go/v2/organizationrole"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -73,7 +75,9 @@ func (r *roleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "Ids of the permissions of this role (`perm_...`). The whole set updates in place.",
+				Default:     setdefault.StaticValue(types.SetValueMust(types.StringType, []attr.Value{})),
+				Description: "Ids of the permissions of this role (`perm_...`). The whole set updates in place. " +
+					"Defaults to an empty set.",
 			},
 			"is_creator_eligible": schema.BoolAttribute{
 				Computed:    true,
@@ -95,7 +99,7 @@ func flatten(ctx context.Context, role *clerk.OrganizationRole, m *resourceModel
 	m.ID = types.StringValue(role.ID)
 	m.Name = types.StringValue(role.Name)
 	m.Key = types.StringValue(role.Key)
-	m.Description = types.StringPointerValue(role.Description)
+	m.Description = tfutil.NullIfEmpty(role.Description)
 	ids := make([]string, 0, len(role.Permissions))
 	for _, p := range role.Permissions {
 		ids = append(ids, p.ID)
@@ -124,9 +128,7 @@ func (r *roleResource) Create(ctx context.Context, req resource.CreateRequest, r
 		Name:        clerk.String(plan.Name.ValueString()),
 		Key:         clerk.String(plan.Key.ValueString()),
 		Permissions: permissionIDs(ctx, plan, &resp.Diagnostics),
-	}
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		params.Description = clerk.String(plan.Description.ValueString())
+		Description: tfutil.ClearableString(plan.Description),
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -171,9 +173,7 @@ func (r *roleResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		Name:        clerk.String(plan.Name.ValueString()),
 		Key:         clerk.String(plan.Key.ValueString()),
 		Permissions: permissionIDs(ctx, plan, &resp.Diagnostics),
-	}
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		params.Description = clerk.String(plan.Description.ValueString())
+		Description: tfutil.ClearableString(plan.Description),
 	}
 	if resp.Diagnostics.HasError() {
 		return

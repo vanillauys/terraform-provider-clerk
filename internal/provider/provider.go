@@ -15,6 +15,7 @@ import (
 	dsdomains "github.com/vanillauys/terraform-provider-clerk/internal/datasources/domains"
 	dsjwks "github.com/vanillauys/terraform-provider-clerk/internal/datasources/jwksds"
 	dsorganization "github.com/vanillauys/terraform-provider-clerk/internal/datasources/organizationds"
+	dsorganizations "github.com/vanillauys/terraform-provider-clerk/internal/datasources/organizationsds"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/apikey"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/domainres"
 	"github.com/vanillauys/terraform-provider-clerk/internal/resources/identifier"
@@ -151,5 +152,6 @@ func (p *ClerkProvider) DataSources(_ context.Context) []func() datasource.DataS
 		dsdomains.NewDataSource,
 		dsjwks.NewDataSource,
 		dsorganization.NewDataSource,
+		dsorganizations.NewDataSource,
 	}
 }

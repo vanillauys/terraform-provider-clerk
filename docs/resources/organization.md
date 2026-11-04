@@ -33,12 +33,12 @@ resource "clerk_organization" "acme" {
 
 ### Optional
 
-- `admin_delete_enabled` (Boolean) Allow organization admins to delete the organization.
-- `created_by` (String) User id of the creator. Create-only: a change forces a replacement. When set, Clerk adds this user as the first admin member.
-- `max_allowed_memberships` (Number) Maximum members. `0` means unlimited.
-- `private_metadata` (String) JSON object, visible to the backend only.
-- `public_metadata` (String) JSON object, visible to the frontend.
-- `slug` (String) URL-safe slug. Clerk derives one from the name when unset.
+- `admin_delete_enabled` (Boolean) Allow organization admins to delete the organization. Defaults to `true`.
+- `created_by` (String) User id of the creator. Create-only: a change forces a replacement. When set, Clerk adds this user as the first admin member. Clerk uses it only on create, so if you remove it, the state keeps the creator.
+- `max_allowed_memberships` (Number) Maximum members. `0` means unlimited. If you do not set it, Clerk copies the instance default from `clerk_instance_organization_settings`. If you remove it later, the organization keeps its current value.
+- `private_metadata` (String) JSON object, visible to the backend only. Defaults to `{}`.
+- `public_metadata` (String) JSON object, visible to the frontend. Defaults to `{}`.
+- `slug` (String) URL-safe slug. If you do not set it, Clerk makes one from the name. If you remove it later, the organization keeps its current slug.
 
 ### Read-Only
 

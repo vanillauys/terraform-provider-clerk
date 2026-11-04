@@ -11,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -73,15 +75,19 @@ func (r *oauthAppResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"scopes": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
+				Default:  stringdefault.StaticString("email profile"),
 				Description: "Space-separated scopes, for example `\"profile email\"`. Clerk " +
 					"normalizes the value server-side (order, plus a forced `offline_access`); " +
 					"the provider keeps the configured value in state and cannot detect " +
-					"server-side drift on this field.",
+					"server-side drift on this field. Defaults to `\"email profile\"`, which " +
+					"Clerk stores as its own default `email offline_access profile`.",
 			},
 			"public": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "`true` for a public client (PKCE, no secret). Create-only: a change forces a replacement.",
+				Default:     booldefault.StaticBool(false),
+				Description: "`true` for a public client (PKCE, no secret). Create-only: a change forces a replacement. Defaults to `false`.",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 					boolplanmodifier.UseStateForUnknown(),
@@ -90,7 +96,8 @@ func (r *oauthAppResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"consent_screen_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "Show the consent screen in the authorization flow.",
+				Default:     booldefault.StaticBool(true),
+				Description: "Show the consent screen in the authorization flow. Defaults to `true`.",
 			},
 			"client_id": schema.StringAttribute{
 				Computed:    true,

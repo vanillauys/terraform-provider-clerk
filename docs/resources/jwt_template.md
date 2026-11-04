@@ -33,12 +33,16 @@ resource "clerk_jwt_template" "api" {
 
 ### Optional
 
-- `allowed_clock_skew` (Number) Allowed clock skew in seconds. The Clerk default is 5.
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
+- `allowed_clock_skew` (Number) Allowed clock skew in seconds. Defaults to `5`.
 - `claims` (String) JSON object with the custom claims. Values support the Clerk shortcodes, for example `{{user.public_metadata.role}}`. Defaults to `{}`.
-- `custom_signing_key` (Boolean) Set to `true` to sign tokens with your own key instead of the instance key.
-- `lifetime` (Number) Token lifetime in seconds. The Clerk default is 60.
-- `signing_algorithm` (String) Signing algorithm, for example `RS256` or `HS256`.
-- `signing_key` (String, Sensitive) Private key for a custom signing key. Clerk never returns this value; the provider keeps the configured value in state and cannot detect server-side drift.
+- `custom_signing_key` (Boolean) Set to `true` to sign tokens with your own key instead of the instance key. Defaults to `false`.
+- `lifetime` (Number) Token lifetime in seconds. Defaults to `60`.
+- `signing_algorithm` (String) Signing algorithm, for example `RS256` or `HS256`. Defaults to `RS256`.
+- `signing_key` (String, Sensitive) Private key for a custom signing key. Clerk never returns this value; the provider keeps the configured value in state and cannot detect server-side drift. If you remove it, Clerk keeps the last key; set `custom_signing_key = false` to stop using it. To keep the key out of the state, use `signing_key_wo` instead.
+- `signing_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only form of `signing_key`. Terraform keeps it out of the plan and the state. It needs Terraform 1.11 or later. Do not set it together with `signing_key`. A new value reaches Clerk only when `signing_key_wo_version` changes.
+- `signing_key_wo_version` (Number) Version of `signing_key_wo`. Change it to send the current `signing_key_wo` value to Clerk. It needs `signing_key_wo`.
 
 ### Read-Only
 
