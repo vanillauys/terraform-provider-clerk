@@ -63,6 +63,7 @@ type Client struct {
 func New(secretKey, apiURL, version string) *Client {
 	cfg := &clerk.ClientConfig{}
 	cfg.Key = clerk.String(secretKey)
+	cfg.HTTPClient = HTTPClient()
 	if apiURL != "" {
 		cfg.URL = clerk.String(apiURL)
 	}

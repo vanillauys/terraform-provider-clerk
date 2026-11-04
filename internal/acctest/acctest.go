@@ -60,6 +60,7 @@ func TestUser(t *testing.T) string {
 	t.Helper()
 	cfg := &clerk.ClientConfig{}
 	cfg.Key = clerk.String(os.Getenv("CLERK_SECRET_KEY"))
+	cfg.HTTPClient = clerkapi.HTTPClient()
 	if u := os.Getenv("CLERK_API_URL"); u != "" {
 		cfg.URL = clerk.String(u)
 	}

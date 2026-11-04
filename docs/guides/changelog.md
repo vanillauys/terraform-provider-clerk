@@ -93,6 +93,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   base64 form, and the provider now keeps the configured form.
 - `clerk_saml_connection`: if the update after the create fails, the error
   now shows the id of the connection that Clerk created.
+- The provider retries a request that Clerk rate-limits (429), up to five
+  times, and waits as long as `Retry-After` asks (at most 30 seconds). Before,
+  a large apply failed with "too_many_requests". The client also drops the
+  SDK's 5-second timeout for the whole call; the Terraform operation and a
+  30-second header timeout for each attempt now bound it.
 - `clerk_organization_domain`: the read pages through all the domains of the
   organization. Before, it read only the first page of 10, so a domain on a
   later page dropped from the state.
