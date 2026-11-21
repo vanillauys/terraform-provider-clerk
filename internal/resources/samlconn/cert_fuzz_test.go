@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // FuzzCertBody feeds certBody a certificate from the config or from Clerk.
@@ -45,6 +46,12 @@ func FuzzCertBodyText(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, in string) {
+		// Terraform strings and Clerk JSON values are valid UTF-8. In
+		// invalid UTF-8, the removal of a space can join two stray bytes
+		// into a new whitespace rune, for example "\xc2 \xa0" to U+00A0.
+		if !utf8.ValidString(in) {
+			t.Skip("certBody gets valid UTF-8 only")
+		}
 		body := certBody(in)
 		if strings.ContainsAny(body, " \t\r\n") {
 			t.Fatalf("certBody(%q) = %q, want no whitespace", in, body)
