@@ -3,7 +3,7 @@ module github.com/vanillauys/terraform-provider-clerk
 go 1.26.10
 
 require (
-	github.com/clerk/clerk-sdk-go/v2 v2.8.0
+	github.com/clerk/clerk-sdk-go/v2 v2.9.0
 	github.com/hashicorp/terraform-plugin-framework v1.19.0
 	github.com/hashicorp/terraform-plugin-framework-jsontypes v0.2.0
 	github.com/hashicorp/terraform-plugin-go v0.31.0
